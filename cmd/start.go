@@ -44,10 +44,15 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 	log.Info(fmt.Sprintf("Start plixy %s server...", version))
 
 	s := server.New(ops.port)
-	err := s.Start()
+
+	ctx = ContextWithSignal(ctx)
+	err := s.Start(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not start server")
 	}
+	defer s.Close()
+
+	s.Wait()
 
 	log.Info(fmt.Sprintf("Stop plixy %s server...", version))
 
