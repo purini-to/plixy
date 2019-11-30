@@ -17,7 +17,7 @@ func initLog() error {
 		logger, err = zap.NewProduction()
 	}
 	if err != nil {
-		return errors.Wrap(err, "Could not build logger")
+		return errors.Wrap(err, "could not build logger")
 	}
 
 	log.SetLogger(logger)
