@@ -3,6 +3,7 @@ module github.com/purini-to/plixy
 go 1.13
 
 require (
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/afero v1.2.2 // indirect

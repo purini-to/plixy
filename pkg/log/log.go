@@ -21,9 +21,14 @@ type writer struct {
 	logger *zap.Logger
 }
 
-// SetWriter is set log writer
-func SetWriter(logger *zap.Logger) {
+// SetLogger is set log writer
+func SetLogger(logger *zap.Logger) {
 	w = &writer{logger: logger}
+}
+
+// GetLogger is get log writer
+func GetLogger() *zap.Logger {
+	return w.logger
 }
 
 func Debug(msg string, fields ...zap.Field) {
