@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/purini-to/plixy/pkg/middleware"
+	"github.com/purini-to/plixy/pkg/router"
+
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/log"
 	"go.uber.org/zap"
@@ -28,10 +30,12 @@ func (s *Server) Start(ctx context.Context) error {
 		log.Info("Stopping server gracefully")
 	}()
 
-	r := httprouter.New()
-
-	r.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		fmt.Fprintf(w, "hello, %s", p)
+	r := router.New()
+	r.Use(
+		middleware.RequestID,
+	)
+	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "hello")
 	})
 
 	address := fmt.Sprintf(":%v", s.port)
