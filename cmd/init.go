@@ -20,6 +20,6 @@ func initLog() error {
 		return errors.Wrap(err, "Could not build logger")
 	}
 
-	log.SetWriter(logger)
+	log.SetLogger(logger)
 	return nil
 }
