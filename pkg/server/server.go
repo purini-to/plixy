@@ -60,7 +60,7 @@ func (s *Server) Stop() {
 	graceTimeOut := defaultGraceTimeOut
 	ctx, cancel := context.WithTimeout(context.Background(), graceTimeOut)
 	defer cancel()
-	log.Debug(fmt.Sprintf("Waiting %s before killing connections...", graceTimeOut))
+	log.Info(fmt.Sprintf("Waiting %s before killing connections...", graceTimeOut))
 	if err := s.server.Shutdown(ctx); err != nil {
 		log.Debug("Wait is over due to error", zap.Error(err))
 		s.server.Close()
