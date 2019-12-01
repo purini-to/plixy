@@ -17,7 +17,10 @@ func RequestIDToContext(ctx context.Context, requestID string) context.Context {
 }
 
 func RequestIDFromContext(ctx context.Context) string {
-	return ctx.Value(reqIDContextKey).(string)
+	if id, ok := ctx.Value(reqIDContextKey).(string); ok {
+		return id
+	}
+	return ""
 }
 
 func RequestIDFromRequest(r *http.Request) string {

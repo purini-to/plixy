@@ -32,10 +32,12 @@ func (s *Server) Start(ctx context.Context) error {
 
 	r := router.New()
 	r.Use(
+		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
+		middleware.AccessLog,
 	)
 	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "hello")
+		_, _ = fmt.Fprintf(w, "hello")
 	})
 
 	address := fmt.Sprintf(":%v", s.port)
@@ -67,7 +69,7 @@ func (s *Server) Stop() {
 	log.Info(fmt.Sprintf("Waiting %s before killing connections...", graceTimeOut))
 	if err := s.server.Shutdown(ctx); err != nil {
 		log.Debug("Wait is over due to error", zap.Error(err))
-		s.server.Close()
+		_ = s.server.Close()
 	}
 	log.Debug("Server closed")
 
