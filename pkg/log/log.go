@@ -1,9 +1,16 @@
 package log
 
 import (
+	"context"
 	"fmt"
 
 	"go.uber.org/zap"
+)
+
+type loggerKeyType int
+
+const (
+	loggerContextKey loggerKeyType = iota
 )
 
 var w *writer
@@ -29,6 +36,19 @@ func SetLogger(logger *zap.Logger) {
 // GetLogger is get log writer
 func GetLogger() *zap.Logger {
 	return w.logger
+}
+
+// ToContext set logger with context
+func ToContext(ctx context.Context, logger *zap.Logger) context.Context {
+	return context.WithValue(ctx, loggerContextKey, logger)
+}
+
+// FromContext get logger from context
+func FromContext(ctx context.Context) *zap.Logger {
+	if logger, ok := ctx.Value(loggerContextKey).(*zap.Logger); ok {
+		return logger
+	}
+	return nil
 }
 
 func Debug(msg string, fields ...zap.Field) {
