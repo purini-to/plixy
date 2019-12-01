@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/purini-to/plixy/pkg/router"
+	"github.com/purini-to/plixy/pkg/proxy"
 	"github.com/purini-to/plixy/pkg/trace"
 )
 
@@ -18,7 +18,7 @@ func TestRequestID(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 
 	t.Run("should be set anew request id If there is no id in the request header", func(t *testing.T) {
-		r := router.New()
+		r := proxy.New()
 		r.Use(WithLogger(logger), RequestID)
 
 		reqID := ""
@@ -39,7 +39,7 @@ func TestRequestID(t *testing.T) {
 	})
 
 	t.Run("should be set the request header id If there is an ID in the request header", func(t *testing.T) {
-		r := router.New()
+		r := proxy.New()
 		r.Use(WithLogger(logger), RequestID)
 
 		reqID := ""

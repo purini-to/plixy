@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/purini-to/plixy/pkg/router"
+	"github.com/purini-to/plixy/pkg/proxy"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -14,7 +14,7 @@ import (
 func TestAccessLog(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 
-	r := router.New()
+	r := proxy.New()
 	r.Use(WithLogger(logger), AccessLog)
 
 	r.GET("/", func(w http.ResponseWriter, r *http.Request) {

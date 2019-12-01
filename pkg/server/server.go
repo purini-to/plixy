@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/purini-to/plixy/pkg/middleware"
-	"github.com/purini-to/plixy/pkg/router"
+	"github.com/purini-to/plixy/pkg/proxy"
 
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/log"
@@ -30,16 +30,13 @@ func (s *Server) Start(ctx context.Context) error {
 		log.Info("Stopping server gracefully")
 	}()
 
-	r := router.New()
+	r := proxy.New()
 	r.Use(
 		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
 		middleware.AccessLog,
 		middleware.Recover,
 	)
-	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, "hello")
-	})
 
 	address := fmt.Sprintf(":%v", s.port)
 	listener, err := net.Listen("tcp", address)

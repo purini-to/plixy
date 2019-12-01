@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/purini-to/plixy/pkg/router"
+	"github.com/purini-to/plixy/pkg/proxy"
 	"github.com/purini-to/plixy/pkg/trace"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -16,7 +16,7 @@ func TestRecover(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 
 	t.Run("Internal Server Error should be returned if the panic argument is not an error type", func(t *testing.T) {
-		r := router.New()
+		r := proxy.New()
 		r.Use(WithLogger(logger), Recover)
 
 		r.GET("/", func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ func TestRecover(t *testing.T) {
 	})
 
 	t.Run("error.Error() should be returned if the panic argument is an error type", func(t *testing.T) {
-		r := router.New()
+		r := proxy.New()
 		r.Use(Recover)
 
 		r.GET("/", func(w http.ResponseWriter, r *http.Request) {
