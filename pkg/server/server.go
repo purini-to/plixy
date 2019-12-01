@@ -35,6 +35,7 @@ func (s *Server) Start(ctx context.Context) error {
 		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
 		middleware.AccessLog,
+		middleware.Recover,
 	)
 	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "hello")
