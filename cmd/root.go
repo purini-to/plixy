@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/spf13/viper"
+
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +25,8 @@ This is a lightweight API Gateway.`,
 	}
 
 	cmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "Launch in debug mode if there is a flag")
+
+	viper.BindPFlag("Debug", cmd.PersistentFlags().Lookup("debug"))
 
 	cmd.AddCommand(NewStartCmd(ctx))
 

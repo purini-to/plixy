@@ -27,15 +27,15 @@ const (
 	HTTPStatusClientClosedRequest = 499
 )
 
-type middleware func(http.Handler) http.Handler
+type Middleware func(http.Handler) http.Handler
 
 type Router struct {
-	middlewares []middleware
+	middlewares []Middleware
 	proxy       *httputil.ReverseProxy
 	server      http.Handler
 }
 
-func (r *Router) Use(middlewares ...middleware) {
+func (r *Router) Use(middlewares ...Middleware) {
 	r.middlewares = append(r.middlewares, middlewares...)
 	r.server = r.chain(r.proxy)
 }
@@ -68,7 +68,7 @@ func New() *Router {
 	}
 
 	router := &Router{
-		middlewares: make([]middleware, 0),
+		middlewares: make([]Middleware, 0),
 		proxy: &httputil.ReverseProxy{
 			Director:  createDirector(),
 			Transport: transport,
