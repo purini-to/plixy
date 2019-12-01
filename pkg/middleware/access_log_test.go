@@ -15,10 +15,12 @@ func TestAccessLog(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 
 	r := proxy.New()
-	r.Use(WithLogger(logger), AccessLog)
+	r.Use(WithLogger(logger), AccessLog, func(next http.Handler) http.Handler {
+		fn := func(w http.ResponseWriter, r *http.Request) {
+			_, _ = fmt.Fprint(w, "test")
+		}
 
-	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprint(w, "test")
+		return http.HandlerFunc(fn)
 	})
 
 	req := httptest.NewRequest("GET", "/", nil)
