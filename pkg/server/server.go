@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/purini-to/plixy/pkg/config"
+
 	"github.com/purini-to/plixy/pkg/middleware"
 	"github.com/purini-to/plixy/pkg/proxy"
 
@@ -19,7 +21,6 @@ var defaultGraceTimeOut = time.Second * 30
 
 type Server struct {
 	server   *http.Server
-	port     uint
 	stopChan chan struct{}
 }
 
@@ -30,15 +31,20 @@ func (s *Server) Start(ctx context.Context) error {
 		log.Info("Stopping server gracefully")
 	}()
 
-	r := proxy.New()
-	r.Use(
+	middlewares := []proxy.Middleware{
 		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
 		middleware.AccessLog,
 		middleware.Recover,
-	)
+	}
+	if config.Global.Debug {
+		middlewares = append(middlewares, middleware.ProxyStats)
+	}
 
-	address := fmt.Sprintf(":%v", s.port)
+	r := proxy.New()
+	r.Use(middlewares...)
+
+	address := fmt.Sprintf(":%v", config.Global.Port)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return errors.Wrap(err, "error opening listener")
@@ -61,7 +67,12 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) Stop() {
 	defer log.Info("Server stopped")
 
-	graceTimeOut := defaultGraceTimeOut
+	graceTimeOut, err := time.ParseDuration(config.Global.GraceTimeOut)
+	if err != nil {
+		log.Error(fmt.Sprintf("Could not parse duration for %s. Set default duration %v",
+			config.Global.GraceTimeOut, defaultGraceTimeOut))
+		graceTimeOut = defaultGraceTimeOut
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), graceTimeOut)
 	defer cancel()
 	log.Info(fmt.Sprintf("Waiting %s before killing connections...", graceTimeOut))
@@ -89,9 +100,8 @@ func (s *Server) serve(listener net.Listener) error {
 	return s.server.Serve(listener)
 }
 
-func New(port uint) *Server {
+func New() *Server {
 	return &Server{
-		port:     port,
 		stopChan: make(chan struct{}, 1),
 	}
 }
