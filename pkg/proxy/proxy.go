@@ -35,10 +35,9 @@ const (
 type Middleware func(http.Handler) http.Handler
 
 type Router struct {
-	middlewares     []Middleware
-	proxy           *httputil.ReverseProxy
-	server          http.Handler
-	proxyMiddleware Middleware
+	middlewares []Middleware
+	proxy       *httputil.ReverseProxy
+	server      http.Handler
 }
 
 func (r *Router) Use(middlewares ...Middleware) {
@@ -51,7 +50,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) chain(handle http.Handler) http.Handler {
-	handle = r.proxyMiddleware(handle)
 	l := len(r.middlewares) - 1
 	for i := range r.middlewares {
 		handle = r.middlewares[l-i](handle)
@@ -72,11 +70,6 @@ func New() (*Router, error) {
 		ExpectContinueTimeout: 1 * time.Second,
 		ResponseHeaderTimeout: DefaultDialTimeout,
 		MaxIdleConnsPerHost:   DefaultIdleConnsPerHost,
-	}
-
-	proxyMiddleware, err := ConfigHandleCreator()
-	if err != nil {
-		return nil, errors.Wrap(err, "has error proxy.ConfigHandleCreator()")
 	}
 
 	router := &Router{
@@ -104,7 +97,6 @@ func New() (*Router, error) {
 				httperr.BadGateway(w)
 			},
 		},
-		proxyMiddleware: proxyMiddleware,
 	}
 
 	router.server = router.chain(router.proxy)

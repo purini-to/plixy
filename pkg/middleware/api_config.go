@@ -1,26 +1,21 @@
-package proxy
+package middleware
 
 import (
 	"net/http"
 	"sync"
 
-	"github.com/purini-to/plixy/pkg/httperr"
-
-	"github.com/purini-to/plixy/pkg/config"
-
-	"go.uber.org/zap"
-
-	"github.com/purini-to/plixy/pkg/log"
-
 	"github.com/gorilla/mux"
-
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/api"
+	"github.com/purini-to/plixy/pkg/config"
+	"github.com/purini-to/plixy/pkg/httperr"
+	"github.com/purini-to/plixy/pkg/log"
+	"go.uber.org/zap"
 )
 
-var apiMap = sync.Map{}
+var apiConfigMap = sync.Map{}
 
-func ConfigHandleCreator() (Middleware, error) {
+func WithApiConfig() (func(next http.Handler) http.Handler, error) {
 	apis, err := api.GetApiConfigs()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not api.GetApiConfigs()")
@@ -29,7 +24,7 @@ func ConfigHandleCreator() (Middleware, error) {
 	router := mux.NewRouter()
 	for _, a := range apis {
 		router.Name(a.Name).Methods(a.Proxy.Methods...).Path(a.Proxy.Path)
-		apiMap.Store(a.Name, a)
+		apiConfigMap.Store(a.Name, a)
 	}
 
 	return func(next http.Handler) http.Handler {
@@ -40,7 +35,7 @@ func ConfigHandleCreator() (Middleware, error) {
 				return
 			}
 
-			v, ok := apiMap.Load(match.Route.GetName())
+			v, ok := apiConfigMap.Load(match.Route.GetName())
 			if !ok {
 				httperr.NotFound(w)
 				return
