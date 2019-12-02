@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
+	github.com/gorilla/mux v1.7.3
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/magiconair/properties v1.8.1
 	github.com/pelletier/go-toml v1.6.0 // indirect
@@ -23,5 +24,5 @@ require (
 	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
 	golang.org/x/tools v0.0.0-20191127201027-ecd32218bd7f // indirect
 	google.golang.org/api v0.14.0 // indirect
-	gopkg.in/yaml.v2 v2.2.7 // indirect
+	gopkg.in/yaml.v2 v2.2.7
 )

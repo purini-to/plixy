@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/purini-to/plixy/pkg/api"
+	"github.com/purini-to/plixy/pkg/config"
+
 	"github.com/spf13/viper"
 
 	"github.com/purini-to/plixy/pkg/server"
@@ -50,12 +53,17 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 		return errors.Wrap(err, "failed initialize config")
 	}
 
+	err := api.InitRepository(config.Global.DatabaseDSN)
+	if err != nil {
+		return errors.Wrap(err, "failed build repository")
+	}
+
 	log.Info(fmt.Sprintf("Start plixy %s server...", version))
 
 	s := server.New()
 
 	ctx = ContextWithSignal(ctx)
-	err := s.Start(ctx)
+	err = s.Start(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not start server")
 	}

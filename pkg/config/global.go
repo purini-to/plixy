@@ -11,6 +11,7 @@ type global struct {
 	Debug        bool
 	Port         uint
 	GraceTimeOut string
+	DatabaseDSN  string
 }
 
 func init() {
@@ -21,6 +22,7 @@ func init() {
 	viper.BindEnv("Port", "PORT")
 	viper.BindEnv("GraceTimeOut", "GRACE_TIME_OUT")
 	viper.BindEnv("Debug", "DEBUG")
+	viper.BindEnv("DatabaseDSN", "DATABASE_DSN")
 }
 
 func Load(ops ...Option) error {

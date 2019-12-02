@@ -41,7 +41,11 @@ func (s *Server) Start(ctx context.Context) error {
 		middlewares = append(middlewares, middleware.ProxyStats)
 	}
 
-	r := proxy.New()
+	r, err := proxy.New()
+	if err != nil {
+		return errors.Wrap(err, "error proxy.New()")
+	}
+
 	r.Use(middlewares...)
 
 	address := fmt.Sprintf(":%v", config.Global.Port)

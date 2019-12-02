@@ -1,10 +1,18 @@
 package proxy
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"time"
+
+	"github.com/purini-to/plixy/pkg/httperr"
+
+	"github.com/purini-to/plixy/pkg/config"
+
+	"github.com/pkg/errors"
 
 	"go.uber.org/zap/zapcore"
 
@@ -22,17 +30,15 @@ const (
 	// DefaultIdleConnTimeout is the default value for the the maximum amount of time an idle
 	// (keep-alive) connection will remain idle before closing itself.
 	DefaultIdleConnTimeout = 90 * time.Second
-
-	// HTTPStatusClientClosedRequest is status for client is closed
-	HTTPStatusClientClosedRequest = 499
 )
 
 type Middleware func(http.Handler) http.Handler
 
 type Router struct {
-	middlewares []Middleware
-	proxy       *httputil.ReverseProxy
-	server      http.Handler
+	middlewares     []Middleware
+	proxy           *httputil.ReverseProxy
+	server          http.Handler
+	proxyMiddleware Middleware
 }
 
 func (r *Router) Use(middlewares ...Middleware) {
@@ -45,6 +51,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) chain(handle http.Handler) http.Handler {
+	handle = r.proxyMiddleware(handle)
 	l := len(r.middlewares) - 1
 	for i := range r.middlewares {
 		handle = r.middlewares[l-i](handle)
@@ -52,7 +59,7 @@ func (r *Router) chain(handle http.Handler) http.Handler {
 	return handle
 }
 
-func New() *Router {
+func New() (*Router, error) {
 	transport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -67,6 +74,11 @@ func New() *Router {
 		MaxIdleConnsPerHost:   DefaultIdleConnsPerHost,
 	}
 
+	proxyMiddleware, err := ConfigHandleCreator()
+	if err != nil {
+		return nil, errors.Wrap(err, "has error proxy.ConfigHandleCreator()")
+	}
+
 	router := &Router{
 		middlewares: make([]Middleware, 0),
 		proxy: &httputil.ReverseProxy{
@@ -75,7 +87,7 @@ func New() *Router {
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 				// client canceled
 				if err.Error() == "context canceled" {
-					http.Error(w, err.Error(), HTTPStatusClientClosedRequest)
+					httperr.ClientClosedRequest(w, err)
 					return
 				}
 
@@ -89,21 +101,30 @@ func New() *Router {
 						zap.String("upstream_scheme", r.URL.Scheme),
 						zap.Error(err),
 					)
-				http.Error(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
+				httperr.BadGateway(w)
 			},
 		},
+		proxyMiddleware: proxyMiddleware,
 	}
-	router.server = router.proxy
-	return router
+
+	router.server = router.chain(router.proxy)
+	return router, nil
 }
 
 func createDirector() func(r *http.Request) {
 	return func(r *http.Request) {
 		originalURI := r.RequestURI
 
-		r.URL.Scheme = "http"
-		r.URL.Host = "dummy.restapiexample.com"
-		r.Host = "dummy.restapiexample.com"
+		api := config.ApiFromContext(r.Context())
+		target := api.Proxy.Upstream.Target
+		uri, err := url.Parse(target)
+		if err != nil {
+			panic(errors.New(fmt.Sprintf("Could not parse upstream uri. uri: %s", target)))
+		}
+
+		r.URL.Scheme = uri.Scheme
+		r.URL.Host = uri.Host
+		r.Host = uri.Host
 
 		logger := log.FromContext(r.Context())
 		logger.Info("Proxying request to the following upstream",

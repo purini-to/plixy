@@ -3,6 +3,8 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/purini-to/plixy/pkg/httperr"
+
 	"go.uber.org/zap"
 
 	"github.com/purini-to/plixy/pkg/log"
@@ -19,12 +21,12 @@ func Recover(next http.Handler) http.Handler {
 
 				err, ok := rvr.(error)
 				if !ok {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					logger.Error("Unable to handle due to unknown error", zap.Any("unknownErr", rvr))
+					httperr.InternalServerError(w, http.StatusText(http.StatusInternalServerError))
+					logger.Error("Unable to handle due to unknown rvr", zap.Any("rvr", rvr))
 					return
 				}
 
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				httperr.InternalServerError(w, err.Error())
 				logger.Error("Recovers because an error has occurred", zap.Error(err))
 			}
 		}()
