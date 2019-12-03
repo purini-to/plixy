@@ -1,9 +1,8 @@
 package api
 
 import (
+	"context"
 	"net/url"
-
-	"github.com/purini-to/plixy/pkg/config"
 
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/log"
@@ -16,7 +15,12 @@ const (
 var repo Repository
 
 type Repository interface {
-	GetApiConfigs() ([]*config.Api, error)
+	GetApiConfigs() ([]*Api, error)
+}
+
+type Watcher interface {
+	Watch(ctx context.Context, defChan chan<- *DefinitionChanged)
+	Close() error
 }
 
 func InitRepository(dsn string) error {
@@ -43,6 +47,19 @@ func InitRepository(dsn string) error {
 	}
 }
 
-func GetApiConfigs() ([]*config.Api, error) {
+func GetApiConfigs() ([]*Api, error) {
 	return repo.GetApiConfigs()
+}
+
+func Watch(ctx context.Context, defChan chan<- *DefinitionChanged) {
+	if watcher, ok := repo.(Watcher); ok {
+		watcher.Watch(ctx, defChan)
+	}
+}
+
+func Close() error {
+	if watcher, ok := repo.(Watcher); ok {
+		return watcher.Close()
+	}
+	return nil
 }

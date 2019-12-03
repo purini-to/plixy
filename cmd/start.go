@@ -57,6 +57,7 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed build repository")
 	}
+	defer api.Close()
 
 	log.Info(fmt.Sprintf("Start plixy %s server...", version))
 

@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/api"
-	"github.com/purini-to/plixy/pkg/config"
 	"github.com/purini-to/plixy/pkg/httperr"
 	"github.com/purini-to/plixy/pkg/log"
 	"go.uber.org/zap"
@@ -40,9 +39,9 @@ func WithApiConfig() (func(next http.Handler) http.Handler, error) {
 				httperr.NotFound(w)
 				return
 			}
-			configApi := v.(*config.Api)
+			configApi := v.(*api.Api)
 
-			ctx := config.ApiToContext(r.Context(), configApi)
+			ctx := api.ToContext(r.Context(), configApi)
 
 			log.FromContext(ctx).Debug("Match proxy api", zap.String("name", configApi.Name))
 

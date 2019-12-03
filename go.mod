@@ -3,6 +3,7 @@ module github.com/purini-to/plixy
 go 1.13
 
 require (
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/julienschmidt/httprouter v1.3.0

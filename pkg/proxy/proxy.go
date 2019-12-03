@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/purini-to/plixy/pkg/httperr"
+	api2 "github.com/purini-to/plixy/pkg/api"
 
-	"github.com/purini-to/plixy/pkg/config"
+	"github.com/purini-to/plixy/pkg/httperr"
 
 	"github.com/pkg/errors"
 
@@ -42,6 +42,11 @@ type Router struct {
 
 func (r *Router) Use(middlewares ...Middleware) {
 	r.middlewares = append(r.middlewares, middlewares...)
+	r.server = r.chain(r.proxy)
+}
+
+func (r *Router) SetMiddlewares(middlewares ...Middleware) {
+	r.middlewares = middlewares
 	r.server = r.chain(r.proxy)
 }
 
@@ -107,7 +112,7 @@ func createDirector() func(r *http.Request) {
 	return func(r *http.Request) {
 		originalURI := r.RequestURI
 
-		api := config.ApiFromContext(r.Context())
+		api := api2.FromContext(r.Context())
 		target := api.Proxy.Upstream.Target
 		uri, err := url.Parse(target)
 		if err != nil {
