@@ -40,8 +40,17 @@ func (s *Server) Start(ctx context.Context) error {
 	if config.Global.Debug {
 		middlewares = append(middlewares, middleware.ProxyStats)
 	}
+	withApiConfig, err := middleware.WithApiConfig()
+	if err != nil {
+		return errors.Wrap(err, "error middleware.WithApiConfig()")
+	}
+	middlewares = append(middlewares, withApiConfig)
 
-	r := proxy.New()
+	r, err := proxy.New()
+	if err != nil {
+		return errors.Wrap(err, "error proxy.New()")
+	}
+
 	r.Use(middlewares...)
 
 	address := fmt.Sprintf(":%v", config.Global.Port)

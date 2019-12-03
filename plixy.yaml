@@ -1,0 +1,40 @@
+apis:
+  - name: "example employees"
+    proxy:
+      path: "/api/v1/employees"
+      methods:
+        - "GET"
+      upstream:
+        target: "http://dummy.restapiexample.com"
+
+  - name: "example employees by id"
+    proxy:
+      path: "/api/v1/employee/{id:[0-9]+}"
+      methods:
+        - "GET"
+      upstream:
+        target: "http://dummy.restapiexample.com"
+
+  - name: "example create"
+    proxy:
+      path: "/api/v1/create"
+      methods:
+        - "POST"
+      upstream:
+        target: "http://dummy.restapiexample.com"
+
+  - name: "example update"
+    proxy:
+      path: "/api/v1/update/{id:[0-9]+}"
+      methods:
+        - "PUT"
+      upstream:
+        target: "http://dummy.restapiexample.com"
+
+  - name: "example delete"
+    proxy:
+      path: "/api/v1/delete/{id:[0-9]+}"
+      methods:
+        - "DELETE"
+      upstream:
+        target: "http://dummy.restapiexample.com"

@@ -19,10 +19,11 @@ jobs:
     - name: Get dependencies
       run: |
         go mod download
-    
+
     - name: Test
       run: |
-        go test -v -cover ./...
+        make test
 
     - name: Build
-      run: go build -v .
+      run: |
+        make build
