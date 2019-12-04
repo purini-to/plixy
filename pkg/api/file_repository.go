@@ -41,7 +41,7 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 		for {
 			select {
 			case event := <-f.watcher.Events:
-				log.Debug("Api definition file change was detected")
+				log.Debug("Api definition file change was detected", zap.Any("event.op", event.Op))
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					err := f.emitChangeApiDef(defChan)
 					if err != nil {
