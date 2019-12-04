@@ -50,6 +50,10 @@ spec:
     metadata:
       labels:
         app: plixy
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9090'
+        prometheus.io/path: /metrics
     spec:
       containers:
         - name: plixy
@@ -64,9 +68,12 @@ spec:
               cpu: "256m"
           ports:
             - containerPort: 8080
+            - containerPort: 9090
           env:
             - name: PLIXY_DATABASE_DSN
               value: "file:///etc/config/plixy.yaml"
+            - name: PLIXY_STATS_ENABLE
+              value: "true"
           volumeMounts:
             - name: plixy-config-volume
               mountPath: /etc/config
