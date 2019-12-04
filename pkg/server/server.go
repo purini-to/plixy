@@ -109,6 +109,7 @@ func (s *Server) buildMiddlewares() ([]proxy.Middleware, error) {
 	middlewares := []proxy.Middleware{
 		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
+		middleware.RealIP,
 		middleware.AccessLog,
 	}
 	if config.Global.Debug {
