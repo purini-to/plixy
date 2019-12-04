@@ -51,6 +51,7 @@ spec:
       labels:
         app: plixy
       annotations:
+        ts: "1575501296"
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9090'
         prometheus.io/path: /metrics
