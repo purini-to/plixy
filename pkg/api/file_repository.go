@@ -5,20 +5,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/purini-to/plixy/pkg/config"
 
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type FileSystemRepository struct {
-	def     *Definition
-	path    string
-	watcher *fsnotify.Watcher
+	def         *Definition
+	path        string
+	lastModTime int64
+	ticker      *time.Ticker
 }
 
 func (f *FileSystemRepository) GetApiConfigs() ([]*Api, error) {
@@ -26,46 +28,37 @@ func (f *FileSystemRepository) GetApiConfigs() ([]*Api, error) {
 }
 
 func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *DefinitionChanged) error {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return errors.Wrap(err, "failed to create a file system watcher")
-	}
-	f.watcher = watcher
+	f.ticker = time.NewTicker(config.Global.WatchInterval)
 
-	if err := f.watcher.Add(f.path); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("could not watch file. file: %s", f.path))
+	info, err := os.Stat(f.path)
+	if err != nil || info.IsDir() {
+		return errors.Wrap(err, "not found api definition file")
 	}
+	f.lastModTime = info.ModTime().Unix()
 
 	log.Debug("Start watch api definition file", zap.String("file", f.path))
 	go func() {
 		for {
 			select {
-			case event := <-f.watcher.Events:
-				log.Debug("Api definition file change was detected", zap.Any("event.op", event.Op))
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					err := f.emitChangeApiDef(defChan)
-					if err != nil {
-						log.Error("Error emit write change api definition", zap.Error(err))
-						continue
-					}
-				} else if event.Op&fsnotify.Rename == fsnotify.Rename {
-					if info, err := os.Stat(f.path); err != nil || info.IsDir() {
-						// file not found
-						continue
-					}
-					if err := f.watcher.Add(f.path); err != nil {
-						log.Error("Could not watch file", zap.String("file", f.path))
-						continue
-					}
-					err := f.emitChangeApiDef(defChan)
-					if err != nil {
-						log.Error("Error emit rename change api definition", zap.Error(err))
-						continue
-					}
+			case <-f.ticker.C:
+				info, err := os.Stat(f.path)
+				if err != nil || info.IsDir() {
+					// file not found
+					continue
 				}
-			case err := <-f.watcher.Errors:
-				log.Error("Error received from file system notify", zap.Error(err))
-				return
+
+				if f.lastModTime >= info.ModTime().Unix() {
+					// no change file
+					continue
+				}
+				f.lastModTime = info.ModTime().Unix()
+				log.Info("Api definition file change detected")
+
+				err = f.emitChangeApiDef(defChan)
+				if err != nil {
+					log.Error("Error emit rename change api definition", zap.Error(err))
+					continue
+				}
 			case <-ctx.Done():
 				return
 			}
@@ -76,10 +69,11 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 }
 
 func (f *FileSystemRepository) Close() error {
-	if f.watcher == nil {
+	if f.ticker == nil {
 		return nil
 	}
-	return f.watcher.Close()
+	f.ticker.Stop()
+	return nil
 }
 
 func (f *FileSystemRepository) validate(def *Definition) error {

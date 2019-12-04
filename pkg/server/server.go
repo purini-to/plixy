@@ -77,15 +77,9 @@ func (s *Server) Start(ctx context.Context) error {
 func (s *Server) Stop() {
 	defer log.Info("Server stopped")
 
-	graceTimeOut, err := time.ParseDuration(config.Global.GraceTimeOut)
-	if err != nil {
-		log.Error(fmt.Sprintf("Could not parse duration for %s. Set default duration %v",
-			config.Global.GraceTimeOut, defaultGraceTimeOut))
-		graceTimeOut = defaultGraceTimeOut
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), graceTimeOut)
+	ctx, cancel := context.WithTimeout(context.Background(), config.Global.GraceTimeOut)
 	defer cancel()
-	log.Info(fmt.Sprintf("Waiting %s before killing connections...", graceTimeOut))
+	log.Info(fmt.Sprintf("Waiting %s before killing connections...", config.Global.GraceTimeOut))
 	if err := s.server.Shutdown(ctx); err != nil {
 		log.Debug("Wait is over due to error", zap.Error(err))
 		_ = s.server.Close()
