@@ -55,6 +55,18 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 	if err := initConfig(ops.configFilePath); err != nil {
 		return errors.Wrap(err, "failed initialize config")
 	}
+	if err := initExporter(); err != nil {
+		return errors.Wrap(err, "failed initialize exporter")
+	}
+
+	if config.Global.Stats.Enable {
+		exporter := server.NewStatsExporter()
+		err := exporter.StartWithContext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed start stats exporter server")
+		}
+		defer exporter.Close()
+	}
 
 	err := api.InitRepository(config.Global.DatabaseDSN)
 	if err != nil {

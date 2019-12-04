@@ -16,6 +16,13 @@ type global struct {
 	DatabaseDSN   string
 	Watch         bool
 	WatchInterval time.Duration
+	Stats         stats
+}
+
+type stats struct {
+	Enable      bool
+	Port        uint
+	ServiceName string
 }
 
 func init() {
@@ -25,6 +32,9 @@ func init() {
 	viper.SetDefault("DatabaseDSN", "")
 	viper.SetDefault("Watch", false)
 	viper.SetDefault("WatchInterval", 2*time.Second)
+	viper.SetDefault("Stats.Enable", false)
+	viper.SetDefault("Stats.Port", 9090)
+	viper.SetDefault("Stats.ServiceName", "plixy")
 
 	viper.BindEnv("Port", "PLIXY_PORT")
 	viper.BindEnv("GraceTimeOut", "PLIXY_GRACE_TIME_OUT")
@@ -32,6 +42,9 @@ func init() {
 	viper.BindEnv("DatabaseDSN", "PLIXY_DATABASE_DSN")
 	viper.BindEnv("Watch", "PLIXY_WATCH")
 	viper.BindEnv("WatchInterval", "PLIXY_WATCH_INTERVAL")
+	viper.BindEnv("Stats.Enable", "PLIXY_STATS_ENABLE")
+	viper.BindEnv("Stats.Port", "PLIXY_STATS_PORT")
+	viper.BindEnv("Stats.ServiceName", "PLIXY_STATS_SERVICENAME")
 }
 
 func Load(ops ...Option) error {

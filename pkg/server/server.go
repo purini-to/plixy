@@ -110,11 +110,14 @@ func (s *Server) buildMiddlewares() ([]proxy.Middleware, error) {
 		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
 		middleware.AccessLog,
-		middleware.Recover,
 	}
 	if config.Global.Debug {
 		middlewares = append(middlewares, middleware.ProxyStats)
 	}
+	if config.Global.Stats.Enable {
+		middlewares = append(middlewares, middleware.Stats)
+	}
+	middlewares = append(middlewares, middleware.Recover)
 	withApiConfig, err := middleware.WithApiConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "error middleware.WithApiConfig()")
