@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plixy-config
+data:
+  plixy.yaml: |
+    apis:
+      - name: "hello"
+        proxy:
+          path: "/hello"
+          methods:
+            - "GET"
+          upstream:
+            target: "http://wiremock-service.default.svc.cluster.local"
+
+      - name: "status"
+        proxy:
+          path: "/status"
+          methods:
+            - "GET"
+          upstream:
+            target: "http://wiremock-service.default.svc.cluster.local"
+      
+      - name: "echo"
+        proxy:
+          path: "/echo"
+          methods:
+            - "GET"
+          upstream:
+            target: "http://echo-service.default.svc.cluster.local"
+      
+      # Bad Gateway
+      - name: "bad"
+        proxy:
+          path: "/bad"
+          methods:
+            - "GET"
+          upstream:
+            target: "http://bad-service.default.svc.cluster.local"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plixy-deployment
+spec:
+  selector:
+    matchLabels:
+      app: plixy
+  template:
+    metadata:
+      labels:
+        app: plixy
+    spec:
+      containers:
+        - name: plixy
+          image: github.com/purini-to/plixy:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - start
+            - --watch
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "256m"
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PLIXY_DATABASE_DSN
+              value: "file:///etc/config/plixy.yaml"
+          volumeMounts:
+            - name: plixy-config-volume
+              mountPath: /etc/config
+      volumes:
+        - name: plixy-config-volume
+          configMap:
+            name: plixy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plixy-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: plixy
+  ports:
+    - port: 80
+      targetPort: 8080
