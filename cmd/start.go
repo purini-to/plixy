@@ -22,6 +22,7 @@ import (
 type StartOptions struct {
 	port           uint
 	configFilePath string
+	watch          bool
 }
 
 // NewStartCmd creates a new http server command
@@ -38,8 +39,10 @@ func NewStartCmd(ctx context.Context) *cobra.Command {
 
 	cmd.PersistentFlags().UintVarP(&opts.port, "port", "p", 8080, "The port on which to start the server")
 	cmd.PersistentFlags().StringVarP(&opts.configFilePath, "config", "c", "", "Config file path")
+	cmd.PersistentFlags().BoolVarP(&opts.watch, "watch", "", false, "Watch and reloading api definition files")
 
 	viper.BindPFlag("Port", cmd.PersistentFlags().Lookup("port"))
+	viper.BindPFlag("Watch", cmd.PersistentFlags().Lookup("watch"))
 
 	return cmd
 }
@@ -57,6 +60,7 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed build repository")
 	}
+	defer api.Close()
 
 	log.Info(fmt.Sprintf("Start plixy %s server...", version))
 

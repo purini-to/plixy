@@ -1,4 +1,4 @@
-package config
+package api
 
 import "context"
 
@@ -8,7 +8,7 @@ const (
 	apiContextKey configApiKeyType = iota
 )
 
-type ApiDefinition struct {
+type Definition struct {
 	Apis []*Api `json:"apis"`
 }
 
@@ -27,10 +27,14 @@ type Upstream struct {
 	Target string `json:"target"`
 }
 
-func ApiFromContext(ctx context.Context) *Api {
+type DefinitionChanged struct {
+	Definition *Definition
+}
+
+func FromContext(ctx context.Context) *Api {
 	return ctx.Value(apiContextKey).(*Api)
 }
 
-func ApiToContext(ctx context.Context, api *Api) context.Context {
+func ToContext(ctx context.Context, api *Api) context.Context {
 	return context.WithValue(ctx, apiContextKey, api)
 }
