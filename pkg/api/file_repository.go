@@ -7,6 +7,10 @@ import (
 	"os"
 	"time"
 
+	pstats "github.com/purini-to/plixy/pkg/stats"
+
+	"go.opencensus.io/stats"
+
 	"github.com/purini-to/plixy/pkg/config"
 
 	"github.com/pkg/errors"
@@ -36,6 +40,10 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 	}
 	f.lastModTime = info.ModTime().Unix()
 
+	if config.Global.Stats.Enable {
+		stats.Record(ctx, pstats.ApiDefinitionVersion.M(f.lastModTime))
+	}
+
 	log.Debug("Start watch api definition file", zap.String("file", f.path))
 	go func() {
 		for {
@@ -58,6 +66,9 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 				if err != nil {
 					log.Error("Error emit rename change api definition", zap.Error(err))
 					continue
+				}
+				if config.Global.Stats.Enable {
+					stats.Record(ctx, pstats.ApiDefinitionVersion.M(f.lastModTime))
 				}
 			case <-ctx.Done():
 				return
