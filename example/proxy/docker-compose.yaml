@@ -1,0 +1,12 @@
+version: '3.3'
+services:
+  service1:
+    image: rodolpheche/wiremock
+    ports:
+      - '9001:8080'
+    volumes:
+      - ./apis:/home/wiremock/mappings
+  echo1:
+    image: inanimate/echo-server
+    ports:
+      - '9002:8080'
