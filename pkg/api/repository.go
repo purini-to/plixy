@@ -19,7 +19,7 @@ type Repository interface {
 }
 
 type Watcher interface {
-	Watch(ctx context.Context, defChan chan<- *DefinitionChanged)
+	Watch(ctx context.Context, defChan chan<- *DefinitionChanged) error
 	Close() error
 }
 
@@ -51,10 +51,11 @@ func GetApiConfigs() ([]*Api, error) {
 	return repo.GetApiConfigs()
 }
 
-func Watch(ctx context.Context, defChan chan<- *DefinitionChanged) {
+func Watch(ctx context.Context, defChan chan<- *DefinitionChanged) error {
 	if watcher, ok := repo.(Watcher); ok {
-		watcher.Watch(ctx, defChan)
+		return watcher.Watch(ctx, defChan)
 	}
+	return nil
 }
 
 func Close() error {

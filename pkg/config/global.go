@@ -12,17 +12,21 @@ type global struct {
 	Port         uint
 	GraceTimeOut string
 	DatabaseDSN  string
+	Watch        bool
 }
 
 func init() {
 	viper.SetDefault("Port", "8080")
 	viper.SetDefault("GraceTimeOut", "30s")
 	viper.SetDefault("Debug", false)
+	viper.SetDefault("DatabaseDSN", "")
+	viper.SetDefault("Watch", false)
 
-	viper.BindEnv("Port", "PORT")
-	viper.BindEnv("GraceTimeOut", "GRACE_TIME_OUT")
-	viper.BindEnv("Debug", "DEBUG")
-	viper.BindEnv("DatabaseDSN", "DATABASE_DSN")
+	viper.BindEnv("Port", "PLIXY_PORT")
+	viper.BindEnv("GraceTimeOut", "PLIXY_GRACE_TIME_OUT")
+	viper.BindEnv("Debug", "PLIXY_DEBUG")
+	viper.BindEnv("DatabaseDSN", "PLIXY_DATABASE_DSN")
+	viper.BindEnv("Watch", "PLIXY_WATCH")
 }
 
 func Load(ops ...Option) error {

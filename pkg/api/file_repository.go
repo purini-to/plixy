@@ -25,7 +25,17 @@ func (f *FileSystemRepository) GetApiConfigs() ([]*Api, error) {
 	return f.def.Apis, nil
 }
 
-func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *DefinitionChanged) {
+func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *DefinitionChanged) error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return errors.Wrap(err, "failed to create a file system watcher")
+	}
+	f.watcher = watcher
+
+	if err := f.watcher.Add(f.path); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("could not watch file. file: %s", f.path))
+	}
+
 	log.Debug("Start watch api definition file", zap.String("file", f.path))
 	go func() {
 		for {
@@ -61,9 +71,14 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 			}
 		}
 	}()
+
+	return nil
 }
 
 func (f *FileSystemRepository) Close() error {
+	if f.watcher == nil {
+		return nil
+	}
 	return f.watcher.Close()
 }
 
@@ -130,16 +145,6 @@ func NewFileSystemRepository(filePath string) (*FileSystemRepository, error) {
 		return nil, errors.Wrap(err, "error parse api config file")
 	}
 	f.def = definition
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create a file system watcher")
-	}
-	f.watcher = watcher
-
-	if err := f.watcher.Add(f.path); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("could not watch file. file: %s", filePath))
-	}
 
 	return f, nil
 }

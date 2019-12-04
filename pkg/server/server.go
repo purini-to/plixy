@@ -47,6 +47,12 @@ func (s *Server) Start(ctx context.Context) error {
 
 	s.proxy.Use(middlewares...)
 
+	if config.Global.Watch {
+		if err = api.Watch(ctx, s.defChan); err != nil {
+			return errors.Wrap(err, "Could not watch the api definition")
+		}
+	}
+
 	address := fmt.Sprintf(":%v", config.Global.Port)
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
@@ -63,8 +69,6 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 	}()
 	go s.listenApiDefinition(ctx)
-
-	api.Watch(ctx, s.defChan)
 
 	log.Info("Listening HTTP server", zap.String("address", address))
 	return nil
