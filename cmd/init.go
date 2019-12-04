@@ -1,9 +1,15 @@
 package cmd
 
 import (
+	"time"
+
+	"github.com/purini-to/plixy/pkg/stats"
+
+	"contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/config"
 	"github.com/purini-to/plixy/pkg/log"
+	"go.opencensus.io/stats/view"
 	"go.uber.org/zap"
 )
 
@@ -38,5 +44,37 @@ func initConfig(configFilePath string) error {
 		return errors.Wrap(err, "error load config")
 	}
 	log.Debug("Load config", zap.Any("config", config.Global))
+	return nil
+}
+
+func initExporter() error {
+	if config.Global.Stats.Enable {
+		if err := initStatsExporter(); err != nil {
+			return errors.Wrap(err, "failed to create stats exporter")
+		}
+	}
+
+	return nil
+}
+
+func initStatsExporter() error {
+	exporter, err := prometheus.NewExporter(prometheus.Options{
+		Namespace: config.Global.Stats.ServiceName,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to create prometheus exporter")
+	}
+
+	view.RegisterExporter(exporter)
+	stats.PrometheusExporter = exporter
+
+	view.SetReportingPeriod(time.Second)
+
+	vv := append(stats.AllViews)
+
+	if err := view.Register(vv...); err != nil {
+		return errors.Wrap(err, "failed to register server views")
+	}
+
 	return nil
 }
