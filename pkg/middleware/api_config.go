@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 
+	"go.opencensus.io/tag"
+
 	"github.com/purini-to/plixy/pkg/config"
 	pstats "github.com/purini-to/plixy/pkg/stats"
 	"go.opencensus.io/stats"
@@ -47,11 +49,16 @@ func WithApiConfig() (func(next http.Handler) http.Handler, error) {
 				httperr.NotFound(w)
 				return
 			}
-			configApi := v.(*api.Api)
+			apiDef := v.(*api.Api)
 
-			ctx := api.ToContext(r.Context(), configApi)
+			ctx := api.ToContext(r.Context(), apiDef)
 
-			log.FromContext(ctx).Debug("Match proxy api", zap.String("name", configApi.Name))
+			log.FromContext(ctx).Debug("Match proxy api", zap.String("name", apiDef.Name))
+			if config.Global.Stats.Enable {
+				ctx, _ = tag.New(ctx, tag.Upsert(pstats.KeyApiName, apiDef.Name))
+			}
+
+			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}

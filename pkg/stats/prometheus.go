@@ -12,7 +12,8 @@ var PrometheusExporter *prometheus.Exporter
 
 // Tags
 var (
-	KeyPath, _ = tag.NewKey("path")
+	KeyPath, _    = tag.NewKey("path")
+	KeyApiName, _ = tag.NewKey("api_name")
 )
 
 // Measures
@@ -25,7 +26,7 @@ var (
 
 // AllViews aggregates the metrics
 var AllViews = []*view.View{
-	// request
+	// server
 	{
 		Name:        "http/proxy/request_count",
 		Description: "Count of HTTP requests started",
@@ -72,9 +73,48 @@ var AllViews = []*view.View{
 		Aggregation: ochttp.DefaultLatencyDistribution,
 	},
 	{
-		Name:        "proxy/api/definition/version",
+		Name:        "http/proxy/api/definition/version",
 		Description: "Proxy api definition versions",
 		Measure:     ApiDefinitionVersion,
 		Aggregation: view.LastValue(),
+	},
+	// client
+	{
+		Name:        "http/client/sent_bytes",
+		Measure:     ochttp.ClientSentBytes,
+		Aggregation: ochttp.DefaultSizeDistribution,
+		Description: "Total bytes sent in request body (not including headers), by HTTP method and response status",
+		TagKeys:     []tag.Key{ochttp.KeyClientMethod, ochttp.KeyClientStatus},
+	},
+
+	{
+		Name:        "http/client/received_bytes",
+		Measure:     ochttp.ClientReceivedBytes,
+		Aggregation: ochttp.DefaultSizeDistribution,
+		Description: "Total bytes received in response bodies (not including headers but including error responses with bodies), by HTTP method and response status",
+		TagKeys:     []tag.Key{ochttp.KeyClientMethod, ochttp.KeyClientStatus},
+	},
+
+	{
+		Name:        "http/client/roundtrip_latency",
+		Measure:     ochttp.ClientRoundtripLatency,
+		Aggregation: ochttp.DefaultLatencyDistribution,
+		Description: "End-to-end latency, by HTTP method and response status",
+		TagKeys:     []tag.Key{ochttp.KeyClientMethod, ochttp.KeyClientStatus},
+	},
+
+	{
+		Name:        "http/client/completed_count",
+		Measure:     ochttp.ClientRoundtripLatency,
+		Aggregation: view.Count(),
+		Description: "Count of completed requests, by HTTP method and response status",
+		TagKeys:     []tag.Key{ochttp.KeyClientMethod, ochttp.KeyClientStatus},
+	},
+	{
+		Name:        "http/client/completed_count_by_api_name",
+		Measure:     ochttp.ClientRoundtripLatency,
+		Aggregation: view.Count(),
+		Description: "Count of completed requests, by HTTP method and response status and api name",
+		TagKeys:     []tag.Key{ochttp.KeyClientMethod, ochttp.KeyClientStatus, KeyApiName},
 	},
 }
