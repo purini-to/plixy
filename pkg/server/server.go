@@ -150,7 +150,7 @@ func (s *Server) handleApiDefinitionEvent(def *api.Definition) {
 		return
 	}
 	s.proxy.SetMiddlewares(middlewares...)
-	log.Info("Reloaded proxy based on new api definition")
+	log.Info("Reloaded proxy based on new api definition", zap.Int64("version", def.Version))
 }
 
 func New() *Server {

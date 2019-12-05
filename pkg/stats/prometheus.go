@@ -3,6 +3,7 @@ package stats
 import (
 	"contrib.go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
 )
@@ -12,6 +13,14 @@ var PrometheusExporter *prometheus.Exporter
 // Tags
 var (
 	KeyPath, _ = tag.NewKey("path")
+)
+
+// Measures
+var (
+	ApiDefinitionVersion = stats.Int64(
+		"proxy/api/definition/version",
+		"Proxy api definition versions",
+		stats.UnitDimensionless)
 )
 
 // AllViews aggregates the metrics
@@ -61,5 +70,11 @@ var AllViews = []*view.View{
 		Description: "Latency distribution of HTTP requests",
 		Measure:     ochttp.ServerLatency,
 		Aggregation: ochttp.DefaultLatencyDistribution,
+	},
+	{
+		Name:        "proxy/api/definition/version",
+		Description: "Proxy api definition versions",
+		Measure:     ApiDefinitionVersion,
+		Aggregation: view.LastValue(),
 	},
 }

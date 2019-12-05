@@ -15,7 +15,7 @@ const (
 var repo Repository
 
 type Repository interface {
-	GetApiConfigs() ([]*Api, error)
+	GetDefinition() (*Definition, error)
 }
 
 type Watcher interface {
@@ -47,8 +47,8 @@ func InitRepository(dsn string) error {
 	}
 }
 
-func GetApiConfigs() ([]*Api, error) {
-	return repo.GetApiConfigs()
+func GetDefinition() (*Definition, error) {
+	return repo.GetDefinition()
 }
 
 func Watch(ctx context.Context, defChan chan<- *DefinitionChanged) error {
