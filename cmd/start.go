@@ -78,7 +78,7 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 	}
 	defer api.Close()
 
-	log.Info(fmt.Sprintf("Start plixy %s server...", version))
+	log.Info(fmt.Sprintf("Start plixy %s server...", config.Version))
 
 	s := server.New()
 
@@ -91,7 +91,7 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 
 	s.Wait()
 
-	log.Info(fmt.Sprintf("Stop plixy %s server...", version))
+	log.Info(fmt.Sprintf("Stop plixy %s server...", config.Version))
 
 	return nil
 }

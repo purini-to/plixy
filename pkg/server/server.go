@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/purini-to/plixy/pkg/health"
+
 	"github.com/purini-to/plixy/pkg/api"
 
 	"github.com/purini-to/plixy/pkg/config"
@@ -60,7 +62,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	s.server = &http.Server{
-		Handler: s.proxy,
+		Handler: s.buildMux(),
 	}
 
 	go func() {
@@ -99,6 +101,16 @@ func (s *Server) Wait() {
 	log.Debug("Start waiting")
 	<-s.stopChan
 	log.Debug("Waiting has ended")
+}
+
+func (s *Server) buildMux() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/__health__" {
+			health.Handler(w, r)
+			return
+		}
+		s.proxy.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) serve(listener net.Listener) error {
