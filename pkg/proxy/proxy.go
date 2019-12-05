@@ -80,7 +80,7 @@ func New() (*Router, error) {
 		ResponseHeaderTimeout: DefaultDialTimeout,
 		MaxIdleConnsPerHost:   DefaultIdleConnsPerHost,
 	}
-	if config.Global.Stats.Enable {
+	if config.Global.IsObservable() {
 		transport = &ochttp.Transport{Base: transport}
 	}
 

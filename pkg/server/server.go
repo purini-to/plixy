@@ -115,8 +115,8 @@ func (s *Server) buildMiddlewares() ([]proxy.Middleware, error) {
 	if config.Global.Debug {
 		middlewares = append(middlewares, middleware.ProxyStats)
 	}
-	if config.Global.Stats.Enable {
-		middlewares = append(middlewares, middleware.Stats)
+	if config.Global.IsObservable() {
+		middlewares = append(middlewares, middleware.Observable)
 	}
 	middlewares = append(middlewares, middleware.Recover)
 	withApiConfig, err := middleware.WithApiConfig()
