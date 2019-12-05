@@ -52,8 +52,8 @@ spec:
         app: plixy
       annotations:
         ts: "1575501296"
-        prometheus.io/scrape: 'true'
-        prometheus.io/port: '9090'
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
         prometheus.io/path: /metrics
     spec:
       containers:
@@ -78,10 +78,36 @@ spec:
           volumeMounts:
             - name: plixy-config-volume
               mountPath: /etc/config
+          livenessProbe:
+            httpGet:
+              path: /__health__
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
       volumes:
         - name: plixy-config-volume
           configMap:
             name: plixy-config
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: plixy-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: plixy-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
 ---
 apiVersion: v1
 kind: Service

@@ -10,6 +10,7 @@ import (
 
 	"github.com/purini-to/plixy/pkg/config"
 	"go.opencensus.io/plugin/ochttp"
+	"golang.org/x/net/http2"
 
 	"github.com/purini-to/plixy/pkg/api"
 
@@ -66,8 +67,7 @@ func (r *Router) chain(handle http.Handler) http.Handler {
 }
 
 func New() (*Router, error) {
-	var transport http.RoundTripper
-	transport = &http.Transport{
+	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   DefaultDialTimeout,
@@ -80,8 +80,14 @@ func New() (*Router, error) {
 		ResponseHeaderTimeout: DefaultDialTimeout,
 		MaxIdleConnsPerHost:   DefaultIdleConnsPerHost,
 	}
+	if err := http2.ConfigureTransport(tr); err != nil {
+		return nil, errors.Wrap(err, "could not create http2 transport")
+	}
+
+	var transport http.RoundTripper
+	transport = tr
 	if config.Global.IsObservable() {
-		transport = &ochttp.Transport{Base: transport}
+		transport = &ochttp.Transport{Base: tr}
 	}
 
 	router := &Router{
