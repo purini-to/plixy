@@ -9,7 +9,8 @@ const (
 )
 
 type Definition struct {
-	Apis []*Api `json:"apis"`
+	Apis    []*Api `json:"apis"`
+	Version int64
 }
 
 type Api struct {

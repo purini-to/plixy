@@ -1,8 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"sync"
+
+	"github.com/purini-to/plixy/pkg/config"
+	pstats "github.com/purini-to/plixy/pkg/stats"
+	"go.opencensus.io/stats"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -15,13 +20,16 @@ import (
 var apiConfigMap = sync.Map{}
 
 func WithApiConfig() (func(next http.Handler) http.Handler, error) {
-	apis, err := api.GetApiConfigs()
+	def, err := api.GetDefinition()
 	if err != nil {
-		return nil, errors.Wrap(err, "could not api.GetApiConfigs()")
+		return nil, errors.Wrap(err, "could not api.GetDefinition()")
+	}
+	if config.Global.Stats.Enable {
+		stats.Record(context.Background(), pstats.ApiDefinitionVersion.M(def.Version))
 	}
 
 	router := mux.NewRouter()
-	for _, a := range apis {
+	for _, a := range def.Apis {
 		router.Name(a.Name).Methods(a.Proxy.Methods...).Path(a.Proxy.Path)
 		apiConfigMap.Store(a.Name, a)
 	}
