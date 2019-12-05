@@ -68,11 +68,9 @@ func initStatsExporter() error {
 	view.RegisterExporter(exporter)
 	stats.PrometheusExporter = exporter
 
-	view.SetReportingPeriod(time.Second)
+	view.SetReportingPeriod(5 * time.Second)
 
-	vv := append(stats.AllViews)
-
-	if err := view.Register(vv...); err != nil {
+	if err := view.Register(stats.AllViews...); err != nil {
 		return errors.Wrap(err, "failed to register server views")
 	}
 

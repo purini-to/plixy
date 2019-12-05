@@ -8,7 +8,10 @@ import (
 	"net/url"
 	"time"
 
-	api2 "github.com/purini-to/plixy/pkg/api"
+	"github.com/purini-to/plixy/pkg/config"
+	"go.opencensus.io/plugin/ochttp"
+
+	"github.com/purini-to/plixy/pkg/api"
 
 	"github.com/purini-to/plixy/pkg/httperr"
 
@@ -63,7 +66,8 @@ func (r *Router) chain(handle http.Handler) http.Handler {
 }
 
 func New() (*Router, error) {
-	transport := &http.Transport{
+	var transport http.RoundTripper
+	transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   DefaultDialTimeout,
@@ -75,6 +79,9 @@ func New() (*Router, error) {
 		ExpectContinueTimeout: 1 * time.Second,
 		ResponseHeaderTimeout: DefaultDialTimeout,
 		MaxIdleConnsPerHost:   DefaultIdleConnsPerHost,
+	}
+	if config.Global.Stats.Enable {
+		transport = &ochttp.Transport{Base: transport}
 	}
 
 	router := &Router{
@@ -112,8 +119,8 @@ func createDirector() func(r *http.Request) {
 	return func(r *http.Request) {
 		originalURI := r.RequestURI
 
-		api := api2.FromContext(r.Context())
-		target := api.Proxy.Upstream.Target
+		apiDef := api.FromContext(r.Context())
+		target := apiDef.Proxy.Upstream.Target
 		uri, err := url.Parse(target)
 		if err != nil {
 			panic(errors.New(fmt.Sprintf("Could not parse upstream uri. uri: %s", target)))
