@@ -17,12 +17,24 @@ type global struct {
 	Watch         bool
 	WatchInterval time.Duration
 	Stats         stats
+	Trace         trace
+}
+
+func (g *global) IsObservable() bool {
+	return g.Stats.Enable || g.Trace.Enable
 }
 
 type stats struct {
 	Enable      bool
 	Port        uint
 	ServiceName string
+}
+
+type trace struct {
+	Enable            bool
+	AgentEndpoint     string
+	CollectorEndpoint string
+	ServiceName       string
 }
 
 func init() {
@@ -35,6 +47,10 @@ func init() {
 	viper.SetDefault("Stats.Enable", false)
 	viper.SetDefault("Stats.Port", 9090)
 	viper.SetDefault("Stats.ServiceName", "plixy")
+	viper.SetDefault("Trace.Enable", false)
+	viper.SetDefault("Trace.AgentEndpoint", "localhost:6831")
+	viper.SetDefault("Trace.CollectorEndpoint", "http://localhost:14268/api/traces")
+	viper.SetDefault("Trace.ServiceName", "plixy")
 
 	viper.BindEnv("Port", "PLIXY_PORT")
 	viper.BindEnv("GraceTimeOut", "PLIXY_GRACE_TIME_OUT")
@@ -44,7 +60,11 @@ func init() {
 	viper.BindEnv("WatchInterval", "PLIXY_WATCH_INTERVAL")
 	viper.BindEnv("Stats.Enable", "PLIXY_STATS_ENABLE")
 	viper.BindEnv("Stats.Port", "PLIXY_STATS_PORT")
-	viper.BindEnv("Stats.ServiceName", "PLIXY_STATS_SERVICENAME")
+	viper.BindEnv("Stats.ServiceName", "PLIXY_STATS_SERVICE_NAME")
+	viper.BindEnv("Trace.Enable", "PLIXY_TRACE_ENABLE")
+	viper.BindEnv("Trace.AgentEndpoint", "PLIXY_TRACE_AGENT_ENDPOINT")
+	viper.BindEnv("Trace.CollectorEndpoint", "PLIXY_TRACE_COLLECTOR_ENDPOINT")
+	viper.BindEnv("Trace.ServiceName", "PLIXY_TRACE_SERVICE_NAME")
 }
 
 func Load(ops ...Option) error {

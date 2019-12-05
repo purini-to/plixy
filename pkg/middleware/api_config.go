@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"sync"
 
+	"go.opencensus.io/trace"
+
 	"go.opencensus.io/tag"
 
 	"github.com/purini-to/plixy/pkg/config"
@@ -56,6 +58,11 @@ func WithApiConfig() (func(next http.Handler) http.Handler, error) {
 			log.FromContext(ctx).Debug("Match proxy api", zap.String("name", apiDef.Name))
 			if config.Global.Stats.Enable {
 				ctx, _ = tag.New(ctx, tag.Upsert(pstats.KeyApiName, apiDef.Name))
+			}
+			if config.Global.Trace.Enable {
+				if span := trace.FromContext(ctx); span != nil {
+					span.AddAttributes(trace.StringAttribute("plixy.api_name", apiDef.Name))
+				}
 			}
 
 			r = r.WithContext(ctx)

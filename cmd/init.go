@@ -3,6 +3,12 @@ package cmd
 import (
 	"time"
 
+	"go.uber.org/zap/zapcore"
+
+	"contrib.go.opencensus.io/exporter/jaeger"
+
+	"go.opencensus.io/trace"
+
 	"github.com/purini-to/plixy/pkg/stats"
 
 	"contrib.go.opencensus.io/exporter/prometheus"
@@ -53,6 +59,11 @@ func initExporter() error {
 			return errors.Wrap(err, "failed to create stats exporter")
 		}
 	}
+	if config.Global.Trace.Enable {
+		if err := initTraceExporter(); err != nil {
+			return errors.Wrap(err, "failed to create trace exporter")
+		}
+	}
 
 	return nil
 }
@@ -60,6 +71,9 @@ func initExporter() error {
 func initStatsExporter() error {
 	exporter, err := prometheus.NewExporter(prometheus.Options{
 		Namespace: config.Global.Stats.ServiceName,
+		OnError: func(err error) {
+			log.GetLogger().WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("Error prometheus exporter", zap.Error(err))
+		},
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create prometheus exporter")
@@ -74,5 +88,26 @@ func initStatsExporter() error {
 		return errors.Wrap(err, "failed to register server views")
 	}
 
+	return nil
+}
+
+func initTraceExporter() error {
+	exporter, err := jaeger.NewExporter(jaeger.Options{
+		AgentEndpoint:     config.Global.Trace.AgentEndpoint,
+		CollectorEndpoint: config.Global.Trace.CollectorEndpoint,
+		Process: jaeger.Process{
+			ServiceName: config.Global.Trace.ServiceName,
+		},
+		OnError: func(err error) {
+			log.GetLogger().WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("Error jaeger exporter", zap.Error(err))
+		},
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create jaeger exporter")
+	}
+
+	trace.RegisterExporter(exporter)
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
 	return nil
 }
