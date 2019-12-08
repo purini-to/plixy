@@ -5,6 +5,14 @@ metadata:
 data:
   plixy.yaml: |
     apis:
+      - name: "nginx"
+        proxy:
+          path: "/"
+          methods:
+            - "GET"
+          upstream:
+            target: "http://nginx.default.svc.cluster.local"
+
       - name: "hello"
         proxy:
           path: "/hello"
@@ -51,7 +59,7 @@ spec:
       labels:
         app: plixy
       annotations:
-        ts: "1575501296"
+        ts: "1575649007"
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
         prometheus.io/path: /metrics
@@ -82,9 +90,9 @@ spec:
             httpGet:
               path: /__health__
               port: 8080
-            initialDelaySeconds: 5
+            initialDelaySeconds: 2
             periodSeconds: 5
-            timeoutSeconds: 5
+            timeoutSeconds: 10
       volumes:
         - name: plixy-config-volume
           configMap:

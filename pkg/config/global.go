@@ -10,14 +10,18 @@ import (
 var Global = &global{}
 
 type global struct {
-	Debug         bool
-	Port          uint
-	GraceTimeOut  time.Duration
-	DatabaseDSN   string
-	Watch         bool
-	WatchInterval time.Duration
-	Stats         stats
-	Trace         trace
+	Debug               bool
+	Port                uint
+	GraceTimeOut        time.Duration
+	DatabaseDSN         string
+	Watch               bool
+	WatchInterval       time.Duration
+	DialTimeout         time.Duration
+	MaxIdleConns        int
+	MaxIdleConnsPerHost int
+	IdleConnTimeout     time.Duration
+	Stats               stats
+	Trace               trace
 }
 
 func (g *global) IsObservable() bool {
@@ -44,6 +48,10 @@ func init() {
 	viper.SetDefault("DatabaseDSN", "")
 	viper.SetDefault("Watch", false)
 	viper.SetDefault("WatchInterval", 2*time.Second)
+	viper.SetDefault("DialTimeout", 30*time.Second)
+	viper.SetDefault("MaxIdleConns", 512)
+	viper.SetDefault("MaxIdleConnsPerHost", 128)
+	viper.SetDefault("IdleConnTimeout", 90*time.Second)
 	viper.SetDefault("Stats.Enable", false)
 	viper.SetDefault("Stats.Port", 9090)
 	viper.SetDefault("Stats.ServiceName", "plixy")
@@ -58,6 +66,10 @@ func init() {
 	viper.BindEnv("DatabaseDSN", "PLIXY_DATABASE_DSN")
 	viper.BindEnv("Watch", "PLIXY_WATCH")
 	viper.BindEnv("WatchInterval", "PLIXY_WATCH_INTERVAL")
+	viper.BindEnv("DialTimeout", "PLIXY_DIAL_TIMEOUT")
+	viper.BindEnv("MaxIdleConns", "PLIXY_MAX_IDLE_CONNS")
+	viper.BindEnv("MaxIdleConnsPerHost", "PLIXY_MAX_IDLE_CONNS_PER_HOST")
+	viper.BindEnv("IdleConnTimeout", "PLIXY_IDLE_CONN_TIMEOUT")
 	viper.BindEnv("Stats.Enable", "PLIXY_STATS_ENABLE")
 	viper.BindEnv("Stats.Port", "PLIXY_STATS_PORT")
 	viper.BindEnv("Stats.ServiceName", "PLIXY_STATS_SERVICE_NAME")

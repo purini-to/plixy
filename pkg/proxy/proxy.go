@@ -24,18 +24,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// DefaultDialTimeout when connecting to a backend server.
-	DefaultDialTimeout = 30 * time.Second
-
-	// DefaultIdleConnsPerHost the default value set for http.Transport.MaxIdleConnsPerHost.
-	DefaultIdleConnsPerHost = 64
-
-	// DefaultIdleConnTimeout is the default value for the the maximum amount of time an idle
-	// (keep-alive) connection will remain idle before closing itself.
-	DefaultIdleConnTimeout = 90 * time.Second
-)
-
 type Middleware func(http.Handler) http.Handler
 
 type Router struct {
@@ -70,15 +58,15 @@ func New() (*Router, error) {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout:   DefaultDialTimeout,
-			KeepAlive: 30 * time.Second,
+			Timeout:   config.Global.DialTimeout,
+			KeepAlive: config.Global.IdleConnTimeout,
 		}).DialContext,
-		MaxIdleConns:          256,
-		IdleConnTimeout:       DefaultIdleConnTimeout,
+		MaxIdleConns:          config.Global.MaxIdleConns,
+		IdleConnTimeout:       config.Global.IdleConnTimeout,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		ResponseHeaderTimeout: DefaultDialTimeout,
-		MaxIdleConnsPerHost:   DefaultIdleConnsPerHost,
+		ResponseHeaderTimeout: 10 * time.Second,
+		MaxIdleConnsPerHost:   config.Global.MaxIdleConnsPerHost,
 	}
 	if err := http2.ConfigureTransport(tr); err != nil {
 		return nil, errors.Wrap(err, "could not create http2 transport")
