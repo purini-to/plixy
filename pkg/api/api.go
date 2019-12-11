@@ -19,9 +19,10 @@ type Api struct {
 }
 
 type Proxy struct {
-	Path     string    `json:"path"`
-	Methods  []string  `json:"methods"`
-	Upstream *Upstream `json:"upstream"`
+	Path      string    `json:"path"`
+	Methods   []string  `json:"methods"`
+	Upstream  *Upstream `json:"upstream"`
+	FixedPath bool      `json:"fixedPath"`
 }
 
 type Upstream struct {

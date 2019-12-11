@@ -1,11 +1,9 @@
 package proxy
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"time"
 
 	"github.com/purini-to/plixy/pkg/config"
@@ -58,7 +56,7 @@ func New() (*Proxy, error) {
 
 	proxy := &Proxy{
 		server: &httputil.ReverseProxy{
-			Director:  createDirector(),
+			Director:  api.Director,
 			Transport: transport,
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 				// client canceled
@@ -83,30 +81,4 @@ func New() (*Proxy, error) {
 	}
 
 	return proxy, nil
-}
-
-func createDirector() func(r *http.Request) {
-	return func(r *http.Request) {
-		originalURI := r.RequestURI
-
-		apiDef := api.FromContext(r.Context())
-		target := apiDef.Proxy.Upstream.Target
-		uri, err := url.Parse(target)
-		if err != nil {
-			panic(errors.New(fmt.Sprintf("Could not parse upstream uri. uri: %s", target)))
-		}
-
-		r.URL.Scheme = uri.Scheme
-		r.URL.Host = uri.Host
-		r.Host = uri.Host
-
-		logger := log.FromContext(r.Context())
-		logger.Info("Proxying request to the following upstream",
-			zap.String("uri", originalURI),
-			zap.String("method", r.Method),
-			zap.String("upstream_host", r.URL.Host),
-			zap.String("upstream_uri", r.URL.RequestURI()),
-			zap.String("upstream_scheme", r.URL.Scheme),
-		)
-	}
 }

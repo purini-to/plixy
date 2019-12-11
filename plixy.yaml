@@ -21,7 +21,8 @@ apis:
       methods:
         - "GET"
       upstream:
-        target: "http://localhost:9002"
+        target: "http://localhost:9002/apis/v1"
+      fixedPath: true
 
   - name: "bad"
     proxy:
