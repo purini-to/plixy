@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"time"
-
 	"go.uber.org/zap/zapcore"
 
 	"contrib.go.opencensus.io/exporter/jaeger"
@@ -11,11 +9,9 @@ import (
 
 	"github.com/purini-to/plixy/pkg/stats"
 
-	"contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/config"
 	"github.com/purini-to/plixy/pkg/log"
-	"go.opencensus.io/stats/view"
 	"go.uber.org/zap"
 )
 
@@ -55,7 +51,7 @@ func initConfig(configFilePath string) error {
 
 func initExporter() error {
 	if config.Global.Stats.Enable {
-		if err := initStatsExporter(); err != nil {
+		if err := stats.InitExporter(config.Global.Stats); err != nil {
 			return errors.Wrap(err, "failed to create stats exporter")
 		}
 	}
@@ -63,29 +59,6 @@ func initExporter() error {
 		if err := initTraceExporter(); err != nil {
 			return errors.Wrap(err, "failed to create trace exporter")
 		}
-	}
-
-	return nil
-}
-
-func initStatsExporter() error {
-	exporter, err := prometheus.NewExporter(prometheus.Options{
-		Namespace: config.Global.Stats.ServiceName,
-		OnError: func(err error) {
-			log.GetLogger().WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("Error prometheus exporter", zap.Error(err))
-		},
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to create prometheus exporter")
-	}
-
-	view.RegisterExporter(exporter)
-	stats.PrometheusExporter = exporter
-
-	view.SetReportingPeriod(5 * time.Second)
-
-	if err := view.Register(stats.AllViews...); err != nil {
-		return errors.Wrap(err, "failed to register server views")
 	}
 
 	return nil

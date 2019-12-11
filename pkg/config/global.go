@@ -20,22 +20,24 @@ type global struct {
 	MaxIdleConns        int
 	MaxIdleConnsPerHost int
 	IdleConnTimeout     time.Duration
-	Stats               stats
-	Trace               trace
+	Stats               Stats
+	Trace               Trace
 }
 
 func (g *global) IsObservable() bool {
 	return g.Stats.Enable || g.Trace.Enable
 }
 
-type stats struct {
+type Stats struct {
 	Enable      bool
+	Name        string
 	Port        uint
 	ServiceName string
 }
 
-type trace struct {
+type Trace struct {
 	Enable            bool
+	Name              string
 	AgentEndpoint     string
 	CollectorEndpoint string
 	ServiceName       string
@@ -53,11 +55,10 @@ func init() {
 	viper.SetDefault("MaxIdleConnsPerHost", 128)
 	viper.SetDefault("IdleConnTimeout", 90*time.Second)
 	viper.SetDefault("Stats.Enable", false)
+	viper.SetDefault("Stats.Name", "prometheus")
 	viper.SetDefault("Stats.Port", 9090)
 	viper.SetDefault("Stats.ServiceName", "plixy")
 	viper.SetDefault("Trace.Enable", false)
-	viper.SetDefault("Trace.AgentEndpoint", "localhost:6831")
-	viper.SetDefault("Trace.CollectorEndpoint", "http://localhost:14268/api/traces")
 	viper.SetDefault("Trace.ServiceName", "plixy")
 
 	viper.BindEnv("Port", "PLIXY_PORT")
@@ -71,6 +72,7 @@ func init() {
 	viper.BindEnv("MaxIdleConnsPerHost", "PLIXY_MAX_IDLE_CONNS_PER_HOST")
 	viper.BindEnv("IdleConnTimeout", "PLIXY_IDLE_CONN_TIMEOUT")
 	viper.BindEnv("Stats.Enable", "PLIXY_STATS_ENABLE")
+	viper.BindEnv("Stats.Name", "PLIXY_STATS_NAME")
 	viper.BindEnv("Stats.Port", "PLIXY_STATS_PORT")
 	viper.BindEnv("Stats.ServiceName", "PLIXY_STATS_SERVICE_NAME")
 	viper.BindEnv("Trace.Enable", "PLIXY_TRACE_ENABLE")

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -43,7 +44,7 @@ func InitRepository(dsn string) error {
 		repo = repository
 		return nil
 	default:
-		return errors.New("The selected scheme is not supported to load api definitions")
+		return errors.New(fmt.Sprintf("The selected scheme is not supported to load api definitions. scheme: %s", dsnURL.Scheme))
 	}
 }
 

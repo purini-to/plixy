@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/purini-to/plixy/pkg/stats"
+
 	"github.com/purini-to/plixy/pkg/api"
 	"github.com/purini-to/plixy/pkg/config"
 
@@ -65,26 +67,25 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 		return errors.Wrap(err, "failed initialize exporter")
 	}
 
-	if config.Global.Stats.Enable {
-		exporter := server.NewStatsExporter()
-		err := exporter.StartWithContext(ctx)
-		if err != nil {
-			return errors.Wrap(err, "failed start stats exporter server")
-		}
-		defer exporter.Close()
-	}
+	ctx = ContextWithSignal(ctx)
 
-	err := api.InitRepository(config.Global.DatabaseDSN)
-	if err != nil {
-		return errors.Wrap(err, "failed build repository")
+	if config.Global.Stats.Enable {
+		err := stats.Start(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not start stats exporter")
+		}
+		defer stats.Close()
 	}
-	defer api.Close()
 
 	log.Info(fmt.Sprintf("Start plixy %s server...", config.Version))
 
-	s := server.New()
+	err := api.InitRepository(config.Global.DatabaseDSN)
+	if err != nil {
+		return errors.Wrap(err, "failed initialize repository")
+	}
+	defer api.Close()
 
-	ctx = ContextWithSignal(ctx)
+	s := server.New()
 	err = s.Start(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not start server")
