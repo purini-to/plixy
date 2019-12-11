@@ -23,6 +23,8 @@ type StartOptions struct {
 	port           uint
 	configFilePath string
 	watch          bool
+	stats          bool
+	trace          bool
 }
 
 // NewStartCmd creates a new http server command
@@ -40,8 +42,8 @@ func NewStartCmd(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().UintVarP(&opts.port, "port", "p", 8080, "The port on which to start the server")
 	cmd.PersistentFlags().StringVarP(&opts.configFilePath, "config", "c", "", "Config file path")
 	cmd.PersistentFlags().BoolVarP(&opts.watch, "watch", "", false, "Watch and reloading api definition files")
-	cmd.PersistentFlags().BoolVarP(&opts.watch, "stats", "", false, "Enable stats exporter by prometheus")
-	cmd.PersistentFlags().BoolVarP(&opts.watch, "trace", "", false, "Enable trace exporter by jaeger")
+	cmd.PersistentFlags().BoolVarP(&opts.stats, "stats", "", false, "Enable stats exporter by prometheus")
+	cmd.PersistentFlags().BoolVarP(&opts.trace, "trace", "", false, "Enable trace exporter by jaeger")
 
 	viper.BindPFlag("Port", cmd.PersistentFlags().Lookup("port"))
 	viper.BindPFlag("Watch", cmd.PersistentFlags().Lookup("watch"))
