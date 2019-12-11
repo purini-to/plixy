@@ -24,37 +24,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type Middleware func(http.Handler) http.Handler
-
-type Router struct {
-	middlewares []Middleware
-	proxy       *httputil.ReverseProxy
-	server      http.Handler
+type Proxy struct {
+	server *httputil.ReverseProxy
 }
 
-func (r *Router) Use(middlewares ...Middleware) {
-	r.middlewares = append(r.middlewares, middlewares...)
-	r.server = r.chain(r.proxy)
-}
-
-func (r *Router) SetMiddlewares(middlewares ...Middleware) {
-	r.middlewares = middlewares
-	r.server = r.chain(r.proxy)
-}
-
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *Proxy) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.server.ServeHTTP(w, req)
 }
 
-func (r *Router) chain(handle http.Handler) http.Handler {
-	l := len(r.middlewares) - 1
-	for i := range r.middlewares {
-		handle = r.middlewares[l-i](handle)
-	}
-	return handle
-}
-
-func New() (*Router, error) {
+func New() (*Proxy, error) {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -78,9 +56,8 @@ func New() (*Router, error) {
 		transport = &ochttp.Transport{Base: tr}
 	}
 
-	router := &Router{
-		middlewares: make([]Middleware, 0),
-		proxy: &httputil.ReverseProxy{
+	proxy := &Proxy{
+		server: &httputil.ReverseProxy{
 			Director:  createDirector(),
 			Transport: transport,
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
@@ -105,8 +82,7 @@ func New() (*Router, error) {
 		},
 	}
 
-	router.server = router.chain(router.proxy)
-	return router, nil
+	return proxy, nil
 }
 
 func createDirector() func(r *http.Request) {

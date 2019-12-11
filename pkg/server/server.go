@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/purini-to/plixy/pkg/health"
@@ -23,11 +24,16 @@ import (
 
 var defaultGraceTimeOut = time.Second * 30
 
+type Middleware func(http.Handler) http.Handler
+
 type Server struct {
-	server   *http.Server
-	proxy    *proxy.Router
-	stopChan chan struct{}
-	defChan  chan *api.DefinitionChanged
+	sync.RWMutex
+	server      *http.Server
+	proxy       *proxy.Proxy
+	router      *api.Router
+	middlewares []Middleware
+	stopChan    chan struct{}
+	defChan     chan *api.DefinitionChanged
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -37,17 +43,21 @@ func (s *Server) Start(ctx context.Context) error {
 		log.Info("Stopping server gracefully")
 	}()
 
-	middlewares, err := s.buildMiddlewares()
-	if err != nil {
-		return errors.Wrap(err, "could not build proxy middlewares")
+	if err := s.buildMiddlewares(); err != nil {
+		return errors.Wrap(err, "could not build server middlewares")
 	}
+
+	def, err := api.GetDefinition()
+	if err != nil {
+		return errors.Wrap(err, "could not get api definition")
+	}
+	s.router = api.NewRouter(def)
+	log.Info("Build proxy based on api definition", zap.Int64("version", def.Version))
 
 	s.proxy, err = proxy.New()
 	if err != nil {
 		return errors.Wrap(err, "error proxy.New()")
 	}
-
-	s.proxy.Use(middlewares...)
 
 	if config.Global.Watch {
 		if err = api.Watch(ctx, s.defChan); err != nil {
@@ -104,21 +114,18 @@ func (s *Server) Wait() {
 }
 
 func (s *Server) buildMux() http.Handler {
+	handler := s.chainMiddlewares(s.router.WithApiDefinition(s.proxy))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/__health__" {
 			health.Handler(w, r)
 			return
 		}
-		s.proxy.ServeHTTP(w, r)
+		handler.ServeHTTP(w, r)
 	})
 }
 
-func (s *Server) serve(listener net.Listener) error {
-	return s.server.Serve(listener)
-}
-
-func (s *Server) buildMiddlewares() ([]proxy.Middleware, error) {
-	middlewares := []proxy.Middleware{
+func (s *Server) buildMiddlewares() error {
+	middlewares := []Middleware{
 		middleware.WithLogger(log.GetLogger()),
 		middleware.RequestID,
 		middleware.RealIP,
@@ -131,13 +138,21 @@ func (s *Server) buildMiddlewares() ([]proxy.Middleware, error) {
 		middlewares = append(middlewares, middleware.Observable)
 	}
 	middlewares = append(middlewares, middleware.Recover)
-	withApiConfig, err := middleware.WithApiConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "error middleware.WithApiConfig()")
-	}
-	middlewares = append(middlewares, withApiConfig)
 
-	return middlewares, nil
+	s.middlewares = middlewares
+	return nil
+}
+
+func (s *Server) chainMiddlewares(handle http.Handler) http.Handler {
+	l := len(s.middlewares) - 1
+	for i := range s.middlewares {
+		handle = s.middlewares[l-i](handle)
+	}
+	return handle
+}
+
+func (s *Server) serve(listener net.Listener) error {
+	return s.server.Serve(listener)
 }
 
 func (s *Server) listenApiDefinition(ctx context.Context) {
@@ -149,19 +164,16 @@ func (s *Server) listenApiDefinition(ctx context.Context) {
 			if !ok {
 				return
 			}
-
 			s.handleApiDefinitionEvent(def.Definition)
 		}
 	}
 }
 
 func (s *Server) handleApiDefinitionEvent(def *api.Definition) {
-	middlewares, err := s.buildMiddlewares()
-	if err != nil {
-		log.Error("Failed handle event at change api definition")
-		return
-	}
-	s.proxy.SetMiddlewares(middlewares...)
+	s.Lock()
+	defer s.Unlock()
+	s.router = api.NewRouter(def)
+	s.server.Handler = s.buildMux()
 	log.Info("Reloaded proxy based on new api definition", zap.Int64("version", def.Version))
 }
 

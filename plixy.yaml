@@ -14,3 +14,19 @@ apis:
         - "GET"
       upstream:
         target: "http://localhost:9001"
+
+  - name: "echo"
+    proxy:
+      path: "/echo"
+      methods:
+        - "GET"
+      upstream:
+        target: "http://localhost:9002"
+
+  - name: "bad"
+    proxy:
+      path: "/bad"
+      methods:
+        - "GET"
+      upstream:
+        target: "http://localhost:9999"

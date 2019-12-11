@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/purini-to/plixy/pkg/config"
@@ -13,10 +14,11 @@ import (
 	"github.com/purini-to/plixy/pkg/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type FileSystemRepository struct {
+	sync.RWMutex
 	def    *Definition
 	path   string
 	ticker *time.Ticker
@@ -40,17 +42,9 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 					continue
 				}
 
-				if f.def.Version >= info.ModTime().Unix() {
-					// no change file
-					continue
-				}
-				log.Info("Api definition file change detected")
-
-				err = f.emitChangeApiDef(defChan, info.ModTime().Unix())
-				if err != nil {
-					log.Error("Error emit rename change api definition", zap.Error(err))
-					continue
-				}
+				f.Lock()
+				f.checkNewDefVersion(info, defChan)
+				f.Unlock()
 			case <-ctx.Done():
 				return
 			}
@@ -58,6 +52,19 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 	}()
 
 	return nil
+}
+
+func (f *FileSystemRepository) checkNewDefVersion(info os.FileInfo, defChan chan<- *DefinitionChanged) {
+	if f.def.Version >= info.ModTime().Unix() {
+		return
+	}
+	log.Info("Api definition file change detected")
+
+	err := f.emitChangeApiDef(defChan, info.ModTime().Unix())
+	if err != nil {
+		log.Error("Error emit rename change api definition", zap.Error(err))
+		return
+	}
 }
 
 func (f *FileSystemRepository) Close() error {
