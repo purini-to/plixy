@@ -139,7 +139,10 @@ func InitExporter(conf config.Stats) error {
 	switch conf.Name {
 	case "prometheus":
 		log.Debug("Prometheus stats exporter chosen")
-		exp, err := NewPrometheusExporter(conf.ServiceName, conf.Port)
+		exp, err := NewPrometheusExporter(&PrometheusOption{
+			Namespace: conf.ServiceName,
+			Port:      conf.Port,
+		})
 		if err != nil {
 			return errors.Wrap(err, "failed initialize prometheus exporter")
 		}

@@ -1,13 +1,8 @@
 package cmd
 
 import (
-	"go.uber.org/zap/zapcore"
-
-	"contrib.go.opencensus.io/exporter/jaeger"
-
-	"go.opencensus.io/trace"
-
 	"github.com/purini-to/plixy/pkg/stats"
+	"github.com/purini-to/plixy/pkg/trace"
 
 	"github.com/pkg/errors"
 	"github.com/purini-to/plixy/pkg/config"
@@ -56,31 +51,10 @@ func initExporter() error {
 		}
 	}
 	if config.Global.Trace.Enable {
-		if err := initTraceExporter(); err != nil {
+		if err := trace.InitExporter(config.Global.Trace); err != nil {
 			return errors.Wrap(err, "failed to create trace exporter")
 		}
 	}
 
-	return nil
-}
-
-func initTraceExporter() error {
-	exporter, err := jaeger.NewExporter(jaeger.Options{
-		AgentEndpoint:     config.Global.Trace.AgentEndpoint,
-		CollectorEndpoint: config.Global.Trace.CollectorEndpoint,
-		Process: jaeger.Process{
-			ServiceName: config.Global.Trace.ServiceName,
-		},
-		OnError: func(err error) {
-			log.GetLogger().WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("Error jaeger exporter", zap.Error(err))
-		},
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "failed to create jaeger exporter")
-	}
-
-	trace.RegisterExporter(exporter)
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
 	return nil
 }

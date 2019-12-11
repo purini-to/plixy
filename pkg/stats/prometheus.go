@@ -52,9 +52,14 @@ func (p *PrometheusExporter) Close() error {
 	return p.server.Close()
 }
 
-func NewPrometheusExporter(namespace string, port uint) (*PrometheusExporter, error) {
+type PrometheusOption struct {
+	Namespace string
+	Port      uint
+}
+
+func NewPrometheusExporter(opt *PrometheusOption) (*PrometheusExporter, error) {
 	exporter, err := prometheus.NewExporter(prometheus.Options{
-		Namespace: namespace,
+		Namespace: opt.Namespace,
 		OnError: func(err error) {
 			log.GetLogger().WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("Error prometheus exporter", zap.Error(err))
 		},
@@ -65,6 +70,6 @@ func NewPrometheusExporter(namespace string, port uint) (*PrometheusExporter, er
 
 	return &PrometheusExporter{
 		Exporter: exporter,
-		port:     port,
+		port:     opt.Port,
 	}, nil
 }

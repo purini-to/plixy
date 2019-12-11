@@ -41,13 +41,13 @@ type Trace struct {
 	AgentEndpoint     string
 	CollectorEndpoint string
 	ServiceName       string
+	SamplingFraction  float64
 }
 
 func init() {
 	viper.SetDefault("Port", "8080")
 	viper.SetDefault("GraceTimeOut", 30*time.Second)
 	viper.SetDefault("Debug", false)
-	viper.SetDefault("DatabaseDSN", "")
 	viper.SetDefault("Watch", false)
 	viper.SetDefault("WatchInterval", 2*time.Second)
 	viper.SetDefault("DialTimeout", 30*time.Second)
@@ -59,6 +59,7 @@ func init() {
 	viper.SetDefault("Stats.Port", 9090)
 	viper.SetDefault("Stats.ServiceName", "plixy")
 	viper.SetDefault("Trace.Enable", false)
+	viper.SetDefault("Trace.Name", "jaeger")
 	viper.SetDefault("Trace.ServiceName", "plixy")
 
 	viper.BindEnv("Port", "PLIXY_PORT")
@@ -76,9 +77,11 @@ func init() {
 	viper.BindEnv("Stats.Port", "PLIXY_STATS_PORT")
 	viper.BindEnv("Stats.ServiceName", "PLIXY_STATS_SERVICE_NAME")
 	viper.BindEnv("Trace.Enable", "PLIXY_TRACE_ENABLE")
+	viper.BindEnv("Trace.Name", "PLIXY_TRACE_NAME")
 	viper.BindEnv("Trace.AgentEndpoint", "PLIXY_TRACE_AGENT_ENDPOINT")
 	viper.BindEnv("Trace.CollectorEndpoint", "PLIXY_TRACE_COLLECTOR_ENDPOINT")
 	viper.BindEnv("Trace.ServiceName", "PLIXY_TRACE_SERVICE_NAME")
+	viper.BindEnv("Trace.SamplingFraction", "PLIXY_TRACE_SAMPLING_FRACTION")
 }
 
 func Load(ops ...Option) error {

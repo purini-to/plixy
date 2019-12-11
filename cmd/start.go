@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/purini-to/plixy/pkg/trace"
+
 	"github.com/purini-to/plixy/pkg/stats"
 
 	"github.com/purini-to/plixy/pkg/api"
@@ -75,6 +77,14 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 			return errors.Wrap(err, "could not start stats exporter")
 		}
 		defer stats.Close()
+	}
+
+	if config.Global.Trace.Enable {
+		err := trace.Start(ctx)
+		if err != nil {
+			return errors.Wrap(err, "could not start trace exporter")
+		}
+		defer trace.Close()
 	}
 
 	log.Info(fmt.Sprintf("Start plixy %s server...", config.Version))
