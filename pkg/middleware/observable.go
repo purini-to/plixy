@@ -3,6 +3,8 @@ package middleware
 import (
 	"net/http"
 
+	stats2 "go.opencensus.io/stats"
+
 	"github.com/purini-to/plixy/pkg/config"
 	ptrace "github.com/purini-to/plixy/pkg/trace"
 	"go.opencensus.io/trace"
@@ -15,8 +17,11 @@ import (
 )
 
 func Observable(next http.Handler) http.Handler {
+	if config.Global.Stats.Enable {
+		next = statsWith(next)
+	}
 	if config.Global.Trace.Enable {
-		next = spanWithRequestID(next)
+		next = traceWith(next)
 	}
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx, _ := tag.New(r.Context(), tag.Upsert(stats.KeyPath, r.URL.Path))
@@ -27,7 +32,18 @@ func Observable(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-func spanWithRequestID(next http.Handler) http.Handler {
+func statsWith(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		stats2.Record(r.Context(), stats.RequestsInFlight.M(1))
+		defer func() {
+			stats2.Record(r.Context(), stats.RequestsInFlight.M(-1))
+		}()
+		next.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func traceWith(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		span := trace.FromContext(ctx)
