@@ -1,7 +1,7 @@
 apis:
   - name: "hello"
     proxy:
-      path: "/"
+      path: "/hello"
       methods:
         - "GET"
       upstream:
@@ -22,7 +22,6 @@ apis:
         - "GET"
       upstream:
         target: "http://localhost:9002/apis/v1"
-      fixedPath: true
 
   - name: "bad"
     proxy:

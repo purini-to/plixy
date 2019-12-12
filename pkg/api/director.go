@@ -25,10 +25,7 @@ func Director(r *http.Request) {
 	r.URL.Host = uri.Host
 	r.Host = uri.Host
 
-	path := uri.Path
-	if path != "" {
-		r.URL.Path = path
-	}
+	r.URL.Path = uri.Path
 	if !apiDef.Proxy.FixedPath {
 		r.URL.Path += originalPath
 	}

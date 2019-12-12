@@ -9,24 +9,24 @@ const (
 )
 
 type Definition struct {
-	Apis    []*Api `json:"apis"`
+	Apis    []*Api `yaml:"apis"`
 	Version int64
 }
 
 type Api struct {
-	Name  string `json:"name"`
-	Proxy *Proxy `json:"proxy"`
+	Name  string `yaml:"name"`
+	Proxy *Proxy `yaml:"proxy"`
 }
 
 type Proxy struct {
-	Path      string    `json:"path"`
-	Methods   []string  `json:"methods"`
-	Upstream  *Upstream `json:"upstream"`
-	FixedPath bool      `json:"fixedPath"`
+	Path      string    `yaml:"path"`
+	Methods   []string  `yaml:"methods"`
+	Upstream  *Upstream `yaml:"upstream"`
+	FixedPath bool      `yaml:"fixedPath"`
 }
 
 type Upstream struct {
-	Target string `json:"target"`
+	Target string `yaml:"target"`
 }
 
 type DefinitionChanged struct {
