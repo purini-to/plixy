@@ -6,6 +6,7 @@ apis:
         - "GET"
       upstream:
         target: "http://localhost:9001"
+      fixedPath: true
 
   - name: "status"
     proxy:

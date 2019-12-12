@@ -26,9 +26,9 @@ var (
 		"http/proxy/api/definition_version",
 		"Proxy api definition version",
 		stats.UnitDimensionless)
-	RequestsInFlight = stats.Int64(
-		"http/proxy/requests_in_flight",
-		"Current number of HTTP requests",
+	ConcurrentRequestCount = stats.Int64(
+		"http/proxy/concurrent_request_count",
+		"Current count of HTTP requests",
 		stats.UnitDimensionless)
 )
 
@@ -40,6 +40,12 @@ var AllViews = []*view.View{
 		Description: "Count of HTTP requests started",
 		Measure:     ochttp.ServerRequestCount,
 		Aggregation: view.Count(),
+	},
+	{
+		Name:        "http/proxy/concurrent_request_count",
+		Description: "Current count of HTTP requests",
+		Measure:     ConcurrentRequestCount,
+		Aggregation: view.Sum(),
 	},
 	{
 		Name:        "http/proxy/request_count_by_method",
@@ -85,12 +91,6 @@ var AllViews = []*view.View{
 		Description: "Proxy api definition versions",
 		Measure:     ApiDefinitionVersion,
 		Aggregation: view.LastValue(),
-	},
-	{
-		Name:        "http/proxy/requests_in_flight",
-		Description: "Current number of HTTP requests",
-		Measure:     RequestsInFlight,
-		Aggregation: view.Sum(),
 	},
 	// client
 	{

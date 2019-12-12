@@ -13,7 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/purini-to/plixy/pkg/config"
-	stats2 "github.com/purini-to/plixy/pkg/stats"
+	pstats "github.com/purini-to/plixy/pkg/stats"
 	"go.opencensus.io/stats"
 )
 
@@ -40,7 +40,7 @@ func (r *Router) WithApiDefinition(next http.Handler) http.Handler {
 		ctx := ToContext(req.Context(), apiDef)
 		log.FromContext(ctx).Debug("Match proxy api", zap.String("name", apiDef.Name))
 		if config.Global.Stats.Enable {
-			ctx, _ = tag.New(ctx, tag.Upsert(stats2.KeyApiName, apiDef.Name))
+			ctx, _ = tag.New(ctx, tag.Upsert(pstats.KeyApiName, apiDef.Name))
 		}
 		if config.Global.Trace.Enable {
 			if span := trace.FromContext(ctx); span != nil {
@@ -67,7 +67,7 @@ func NewRouter(def *Definition) *Router {
 	r.mux = m
 
 	if config.Global.Stats.Enable {
-		stats.Record(context.Background(), stats2.ApiDefinitionVersion.M(def.Version))
+		stats.Record(context.Background(), pstats.ApiDefinitionVersion.M(def.Version))
 	}
 	return r
 }

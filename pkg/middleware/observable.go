@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	stats2 "go.opencensus.io/stats"
+	pstats "go.opencensus.io/stats"
 
 	"github.com/purini-to/plixy/pkg/config"
 	ptrace "github.com/purini-to/plixy/pkg/trace"
@@ -34,9 +34,9 @@ func Observable(next http.Handler) http.Handler {
 
 func statsWith(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		stats2.Record(r.Context(), stats.RequestsInFlight.M(1))
+		pstats.Record(r.Context(), stats.ConcurrentRequestCount.M(1))
 		defer func() {
-			stats2.Record(r.Context(), stats.RequestsInFlight.M(-1))
+			pstats.Record(r.Context(), stats.ConcurrentRequestCount.M(-1))
 		}()
 		next.ServeHTTP(w, r)
 	}
