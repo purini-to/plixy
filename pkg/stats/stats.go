@@ -23,8 +23,12 @@ var (
 // Measures
 var (
 	ApiDefinitionVersion = stats.Int64(
-		"proxy/api/definition/version",
-		"Proxy api definition versions",
+		"http/proxy/api/definition_version",
+		"Proxy api definition version",
+		stats.UnitDimensionless)
+	RequestsInFlight = stats.Int64(
+		"http/proxy/requests_in_flight",
+		"Current number of HTTP requests",
 		stats.UnitDimensionless)
 )
 
@@ -77,10 +81,16 @@ var AllViews = []*view.View{
 		Aggregation: ochttp.DefaultLatencyDistribution,
 	},
 	{
-		Name:        "http/proxy/api/definition/version",
+		Name:        "http/proxy/api/definition_version",
 		Description: "Proxy api definition versions",
 		Measure:     ApiDefinitionVersion,
 		Aggregation: view.LastValue(),
+	},
+	{
+		Name:        "http/proxy/requests_in_flight",
+		Description: "Current number of HTTP requests",
+		Measure:     RequestsInFlight,
+		Aggregation: view.Sum(),
 	},
 	// client
 	{
