@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/purini-to/plixy/pkg/log"
 	"go.uber.org/zap"
 )
 
 func Director(r *http.Request) {
+	ctx := r.Context()
 	originalURI := r.RequestURI
 	originalPath := r.URL.Path
 
-	apiDef := FromContext(r.Context())
+	apiDef := FromContext(ctx)
 	target := apiDef.Proxy.Upstream.Target
 	uri, err := url.Parse(target)
 	if err != nil {
@@ -25,12 +27,23 @@ func Director(r *http.Request) {
 	r.URL.Host = uri.Host
 	r.Host = uri.Host
 
-	r.URL.Path = uri.Path
+	path := uri.Path
+	if len(apiDef.Proxy.Upstream.Vars) > 0 {
+		vars := VarsFromContext(ctx)
+		for _, v := range apiDef.Proxy.Upstream.Vars {
+			if s, ok := vars[v]; ok {
+				path = strings.Replace(path, fmt.Sprintf("{%s}", v), s, 1)
+			}
+		}
+	}
+
+	r.URL.Path = path
 	if !apiDef.Proxy.FixedPath {
 		r.URL.Path += originalPath
 	}
+	r.URL.Path = strings.ReplaceAll(r.URL.Path, "//", "/")
 
-	logger := log.FromContext(r.Context())
+	logger := log.FromContext(ctx)
 	logger.Info("Proxying request to the following upstream",
 		zap.String("uri", originalURI),
 		zap.String("method", r.Method),

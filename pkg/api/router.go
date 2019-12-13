@@ -38,6 +38,7 @@ func (r *Router) WithApiDefinition(next http.Handler) http.Handler {
 		apiDef := v.(*Api)
 
 		ctx := ToContext(req.Context(), apiDef)
+		ctx = VarsToContext(ctx, match.Vars)
 		log.FromContext(ctx).Debug("Match proxy api", zap.String("name", apiDef.Name))
 		if config.Global.Stats.Enable {
 			ctx, _ = tag.New(ctx, tag.Upsert(pstats.KeyApiName, apiDef.Name))

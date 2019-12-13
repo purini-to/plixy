@@ -24,6 +24,23 @@ apis:
       upstream:
         target: "http://localhost:9002/apis/v1"
 
+  - name: "echo by id"
+    proxy:
+      path: "/echo/{id}"
+      methods:
+        - "GET"
+      upstream:
+        target: "http://localhost:9002/apis/v1"
+
+  - name: "tasks by id"
+    proxy:
+      path: "/echo/me/tasks/{id}"
+      methods:
+        - "GET"
+      upstream:
+        target: "http://localhost:9002/apis/v1/tasks/{id}"
+      fixedPath: true
+
   - name: "bad"
     proxy:
       path: "/bad"
