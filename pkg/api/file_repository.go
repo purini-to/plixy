@@ -76,7 +76,13 @@ func (f *FileSystemRepository) Close() error {
 }
 
 func (f *FileSystemRepository) validate(def *Definition) error {
-	// TODO validate
+	isValid, err := def.Validate()
+	if err != nil {
+		return err
+	}
+	if !isValid {
+		return errors.New("invalid api definition")
+	}
 	return nil
 }
 
