@@ -1,4 +1,4 @@
-package api
+package director
 
 import (
 	"errors"
@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/purini-to/plixy/pkg/api"
 
 	"github.com/purini-to/plixy/pkg/log"
 	"go.uber.org/zap"
@@ -16,7 +18,7 @@ func Director(r *http.Request) {
 	originalURI := r.RequestURI
 	originalPath := r.URL.Path
 
-	apiDef := FromContext(ctx)
+	apiDef := api.FromContext(ctx)
 	target := apiDef.Proxy.Upstream.Target
 	uri, err := url.Parse(target)
 	if err != nil {
@@ -29,7 +31,7 @@ func Director(r *http.Request) {
 
 	path := uri.Path
 	if len(apiDef.Proxy.Upstream.Vars) > 0 {
-		vars := VarsFromContext(ctx)
+		vars := api.VarsFromContext(ctx)
 		for _, v := range apiDef.Proxy.Upstream.Vars {
 			if s, ok := vars[v]; ok {
 				path = strings.Replace(path, fmt.Sprintf("{%s}", v), s, 1)

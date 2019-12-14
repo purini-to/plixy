@@ -1,9 +1,16 @@
-package api
+package router
 
 import (
 	"context"
 	"net/http"
-	"sync"
+
+	"github.com/purini-to/plixy/pkg/api/repository"
+
+	"github.com/purini-to/plixy/pkg/middleware"
+
+	"github.com/purini-to/plixy/pkg/plugin"
+
+	"github.com/purini-to/plixy/pkg/api"
 
 	"github.com/purini-to/plixy/pkg/httperr"
 	"github.com/purini-to/plixy/pkg/log"
@@ -17,8 +24,13 @@ import (
 	"go.opencensus.io/stats"
 )
 
+type Route struct {
+	api *api.Api
+	mw  []func(next http.Handler) http.Handler
+}
+
 type Router struct {
-	apiConfigMap sync.Map
+	apiConfigMap map[string]*Route
 	mux          *mux.Router
 }
 
@@ -30,15 +42,15 @@ func (r *Router) WithApiDefinition(next http.Handler) http.Handler {
 			return
 		}
 
-		v, ok := r.apiConfigMap.Load(match.Route.GetName())
+		v, ok := r.apiConfigMap[match.Route.GetName()]
 		if !ok {
 			httperr.NotFound(w)
 			return
 		}
-		apiDef := v.(*Api)
+		apiDef := v.api
 
-		ctx := ToContext(req.Context(), apiDef)
-		ctx = VarsToContext(ctx, match.Vars)
+		ctx := api.ToContext(req.Context(), apiDef)
+		ctx = api.VarsToContext(ctx, match.Vars)
 		log.FromContext(ctx).Debug("Match proxy api", zap.String("name", apiDef.Name))
 		if config.Global.Stats.Enable {
 			ctx, _ = tag.New(ctx, tag.Upsert(pstats.KeyApiName, apiDef.Name))
@@ -49,15 +61,17 @@ func (r *Router) WithApiDefinition(next http.Handler) http.Handler {
 			}
 		}
 
+		req.Header.Set(api.NameHeaderKey, apiDef.Name)
+
 		req = req.WithContext(ctx)
-		next.ServeHTTP(w, req.WithContext(ctx))
+		middleware.Chain(next, v.mw).ServeHTTP(w, req.WithContext(ctx))
 	}
 	return http.HandlerFunc(fn)
 }
 
-func NewRouter(def *Definition) *Router {
+func NewRouter(def *api.Definition) (*Router, error) {
 	r := &Router{
-		apiConfigMap: sync.Map{},
+		apiConfigMap: make(map[string]*Route, 0),
 	}
 
 	m := mux.NewRouter()
@@ -66,12 +80,20 @@ func NewRouter(def *Definition) *Router {
 		if len(a.Proxy.Methods) > 0 {
 			rt = rt.Methods(a.Proxy.Methods...)
 		}
-		r.apiConfigMap.Store(a.Name, a)
+
+		handlers, err := plugin.BuildBeforeProxy(a.Plugins)
+		if err != nil {
+			return nil, err
+		}
+		r.apiConfigMap[a.Name] = &Route{
+			api: a,
+			mw:  handlers,
+		}
 	}
 	r.mux = m
 
 	if config.Global.Stats.Enable {
-		stats.Record(context.Background(), pstats.ApiDefinitionVersion.M(def.Version))
+		stats.Record(context.Background(), pstats.ApiDefinitionVersion.M(repository.GetVersion()))
 	}
-	return r
+	return r, nil
 }
