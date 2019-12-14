@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"regexp"
+
+	"github.com/asaskevich/govalidator"
 )
 
 type configApiKeyType int
@@ -15,25 +17,29 @@ const (
 var varsReg = regexp.MustCompile(`\{(.+?)\}`)
 
 type Definition struct {
-	Apis    []*Api `yaml:"apis"`
-	Version int64
+	Apis    []*Api `yaml:"apis" valid:"required"`
+	Version int64  `yaml:"-"`
+}
+
+func (d *Definition) Validate() (bool, error) {
+	return govalidator.ValidateStruct(d)
 }
 
 type Api struct {
-	Name  string `yaml:"name"`
-	Proxy *Proxy `yaml:"proxy"`
+	Name  string `yaml:"name" valid:"required"`
+	Proxy *Proxy `yaml:"proxy" valid:"required"`
 }
 
 type Proxy struct {
-	Path      string    `yaml:"path"`
-	Methods   []string  `yaml:"methods"`
-	Upstream  *Upstream `yaml:"upstream"`
-	FixedPath bool      `yaml:"fixedPath"`
+	Path     string    `yaml:"path" valid:"required,matches(^/)~path must be start with '/'"`
+	Methods  []string  `yaml:"methods" valid:"matches(^(GET|HEAD|POST|PUT|PATCH|DELETE|CONNECT|OPTIONS|TRACE)$)~methods must be http methods. [GET|HEAD|POST|PUT|PATCH|DELETE|CONNECT|OPTIONS|TRACE]"`
+	Upstream *Upstream `yaml:"upstream" valid:"required"`
 }
 
 type Upstream struct {
-	Target string   `yaml:"target"`
-	Vars   []string `yaml:"-"`
+	Target    string   `yaml:"target" valid:"required,requrl~target must be url"`
+	FixedPath bool     `yaml:"fixedPath"`
+	Vars      []string `yaml:"-"`
 }
 
 func (u *Upstream) UnmarshalYAML(unmarshal func(v interface{}) error) error {

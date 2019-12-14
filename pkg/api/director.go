@@ -38,7 +38,7 @@ func Director(r *http.Request) {
 	}
 
 	r.URL.Path = path
-	if !apiDef.Proxy.FixedPath {
+	if !apiDef.Proxy.Upstream.FixedPath {
 		r.URL.Path += originalPath
 	}
 	r.URL.Path = strings.ReplaceAll(r.URL.Path, "//", "/")

@@ -62,7 +62,10 @@ func NewRouter(def *Definition) *Router {
 
 	m := mux.NewRouter()
 	for _, a := range def.Apis {
-		m.Name(a.Name).Methods(a.Proxy.Methods...).Path(a.Proxy.Path)
+		rt := m.Name(a.Name).Path(a.Proxy.Path)
+		if len(a.Proxy.Methods) > 0 {
+			rt = rt.Methods(a.Proxy.Methods...)
+		}
 		r.apiConfigMap.Store(a.Name, a)
 	}
 	r.mux = m
