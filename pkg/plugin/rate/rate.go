@@ -24,8 +24,7 @@ const (
 
 func init() {
 	plugin.Register("rate", &plugin.Plugin{
-		ValidateConfig: ValidateConfigFunc,
-		BeforeProxy:    BeforeProxy,
+		BeforeProxy: BeforeProxy,
 	})
 }
 
@@ -34,10 +33,6 @@ type Config struct {
 	Burst        *int   `json:"burst"`
 	Per          string `json:"per" valid:"required,in(s|m|h|d)~must be contains [s|m|h|d]"`
 	MaxStoreSize int    `json:"maxStoreSize"`
-}
-
-func ValidateConfigFunc(config map[string]interface{}) error {
-	return parseConfig(config, &Config{})
 }
 
 func BeforeProxy(config map[string]interface{}) (func(next http.Handler) http.Handler, error) {

@@ -20,39 +20,18 @@ type cache struct {
 
 var registered = &cache{}
 
-type ValidateConfigFunc func(config map[string]interface{}) error
 type BeforeProxyFunc func(config map[string]interface{}) (func(next http.Handler) http.Handler, error)
 
 type Plugin struct {
-	ValidateConfig ValidateConfigFunc
-	BeforeProxy    BeforeProxyFunc
+	BeforeProxy BeforeProxyFunc
 }
 
 func Register(name string, plg *Plugin) {
 	log.Debug("Register plugin", zap.String("name", name))
 
-	if plg.ValidateConfig != nil {
-		registered.validateConfig.Store(name, plg.ValidateConfig)
-	}
 	if plg.BeforeProxy != nil {
 		registered.beforeProxy.Store(name, plg.BeforeProxy)
 	}
-}
-
-func ValidateConfig(plg []*api.Plugin) error {
-	for _, p := range plg {
-		value, ok := registered.validateConfig.Load(p.Name)
-		if !ok {
-			continue
-		}
-		f := value.(ValidateConfigFunc)
-		err := f(p.Config)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func BuildBeforeProxy(plg []*api.Plugin) ([]func(next http.Handler) http.Handler, error) {
