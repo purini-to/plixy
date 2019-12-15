@@ -147,6 +147,7 @@ apis:
 			}
 		}()
 		go func() {
+			time.Sleep(100 * time.Millisecond)
 			ioutil.WriteFile(name.Name(), []byte(`
 apis:
   - name: "test-update"
@@ -155,7 +156,7 @@ apis:
       upstream:
         target: "http://localhost:8080/update"
 `), 0644)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 			cancel()
 		}()
 		<-ctx.Done()
