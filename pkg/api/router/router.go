@@ -1,10 +1,7 @@
 package router
 
 import (
-	"context"
 	"net/http"
-
-	"github.com/purini-to/plixy/pkg/api/repository"
 
 	"github.com/purini-to/plixy/pkg/middleware"
 
@@ -21,7 +18,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/purini-to/plixy/pkg/config"
 	pstats "github.com/purini-to/plixy/pkg/stats"
-	"go.opencensus.io/stats"
 )
 
 type Route struct {
@@ -64,7 +60,8 @@ func (r *Router) WithApiDefinition(next http.Handler) http.Handler {
 		req.Header.Set(api.NameHeaderKey, apiDef.Name)
 
 		req = req.WithContext(ctx)
-		middleware.Chain(next, v.mw).ServeHTTP(w, req.WithContext(ctx))
+		//next.ServeHTTP(w, req)
+		middleware.Chain(next, v.mw).ServeHTTP(w, req)
 	}
 	return http.HandlerFunc(fn)
 }
@@ -92,8 +89,5 @@ func NewRouter(def *api.Definition) (*Router, error) {
 	}
 	r.mux = m
 
-	if config.Global.Stats.Enable {
-		stats.Record(context.Background(), pstats.ApiDefinitionVersion.M(repository.GetVersion()))
-	}
 	return r, nil
 }

@@ -22,10 +22,6 @@ var (
 
 // Measures
 var (
-	ApiDefinitionVersion = stats.Int64(
-		"http/proxy/api/definition_version",
-		"Proxy api definition version",
-		stats.UnitDimensionless)
 	ConcurrentRequestCount = stats.Int64(
 		"http/proxy/concurrent_request_count",
 		"Current count of HTTP requests",
@@ -85,12 +81,6 @@ var AllViews = []*view.View{
 		Description: "Latency distribution of HTTP requests",
 		Measure:     ochttp.ServerLatency,
 		Aggregation: ochttp.DefaultLatencyDistribution,
-	},
-	{
-		Name:        "http/proxy/api/definition_version",
-		Description: "Proxy api definition versions",
-		Measure:     ApiDefinitionVersion,
-		Aggregation: view.LastValue(),
 	},
 	// client
 	{

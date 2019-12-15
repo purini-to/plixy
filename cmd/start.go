@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/purini-to/plixy/pkg/api/repository"
+	"github.com/purini-to/plixy/pkg/store"
 
 	"github.com/purini-to/plixy/pkg/trace"
 
@@ -89,14 +89,13 @@ func RunServerStart(ctx context.Context, ops *StartOptions) error {
 	}
 
 	log.Info(fmt.Sprintf("Start plixy %s server...", config.Version))
-
-	err := repository.InitRepository(config.Global.DatabaseDSN)
+	st, err := store.Build(config.Global.DatabaseDSN)
 	if err != nil {
-		return errors.Wrap(err, "failed initialize repository")
+		return errors.Wrap(err, "failed initialize store")
 	}
-	defer repository.Close()
+	defer st.Close()
 
-	s := server.New()
+	s := server.New(st)
 	err = s.Start(ctx)
 	if err != nil {
 		return errors.Wrap(err, "could not start server")
