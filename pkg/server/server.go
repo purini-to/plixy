@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/purini-to/plixy/pkg/api/router"
+	"github.com/purini-to/plixy/pkg/store"
 
-	"github.com/purini-to/plixy/pkg/api/repository"
+	"github.com/purini-to/plixy/pkg/api/router"
 
 	"github.com/purini-to/plixy/pkg/health"
 
@@ -37,8 +37,17 @@ type Server struct {
 	proxy       *proxy.Proxy
 	router      *router.Router
 	middlewares []func(http.Handler) http.Handler
+	store       store.Store
 	stopChan    chan struct{}
 	defChan     chan *api.DefinitionChanged
+}
+
+func New(store store.Store) *Server {
+	return &Server{
+		store:    store,
+		stopChan: make(chan struct{}),
+		defChan:  make(chan *api.DefinitionChanged),
+	}
 }
 
 func (s *Server) Start(ctx context.Context) error {
@@ -52,7 +61,7 @@ func (s *Server) Start(ctx context.Context) error {
 		return errors.Wrap(err, "could not build server middlewares")
 	}
 
-	def, err := repository.GetDefinition()
+	def, err := s.store.GetDefinition()
 	if err != nil {
 		return errors.Wrap(err, "could not get api definition")
 	}
@@ -62,14 +71,13 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	s.router = rt
 
-	log.Info("Build proxy based on api definition", zap.Int64("version", repository.GetVersion()))
 	s.proxy, err = proxy.New()
 	if err != nil {
 		return errors.Wrap(err, "error proxy.New()")
 	}
 
 	if config.Global.Watch {
-		if err = repository.Watch(ctx, s.defChan); err != nil {
+		if err = s.store.Watch(ctx, config.Global.WatchInterval, s.defChan); err != nil {
 			return errors.Wrap(err, "Could not watch the api definition")
 		}
 	}
@@ -163,31 +171,29 @@ func (s *Server) listenApiDefinition(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case def, ok := <-s.defChan:
+		case _, ok := <-s.defChan:
 			if !ok {
 				return
 			}
-			s.handleApiDefinitionEvent(def.Definition)
+			s.handleApiDefinitionEvent()
 		}
 	}
 }
 
-func (s *Server) handleApiDefinitionEvent(def *api.Definition) {
+func (s *Server) handleApiDefinitionEvent() {
 	s.Lock()
 	defer s.Unlock()
+	def, err := s.store.GetDefinition()
+	if err != nil {
+		log.Error("failed get definition", zap.Error(err))
+		return
+	}
 	rt, err := router.NewRouter(def)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("could not new router", zap.Error(err))
 		return
 	}
 	s.router = rt
 	s.server.Handler = s.buildMux()
-	log.Info("Reloaded proxy based on new api definition", zap.Int64("version", repository.GetVersion()))
-}
-
-func New() *Server {
-	return &Server{
-		stopChan: make(chan struct{}),
-		defChan:  make(chan *api.DefinitionChanged),
-	}
+	log.Info("Reloaded proxy based on new api definition")
 }
