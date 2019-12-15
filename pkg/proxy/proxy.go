@@ -6,11 +6,11 @@ import (
 	"net/http/httputil"
 	"time"
 
+	"github.com/purini-to/plixy/pkg/api/director"
+
 	"github.com/purini-to/plixy/pkg/config"
 	"go.opencensus.io/plugin/ochttp"
 	"golang.org/x/net/http2"
-
-	"github.com/purini-to/plixy/pkg/api"
 
 	"github.com/purini-to/plixy/pkg/httperr"
 
@@ -56,7 +56,7 @@ func New() (*Proxy, error) {
 
 	proxy := &Proxy{
 		server: &httputil.ReverseProxy{
-			Director:  api.Director,
+			Director:  director.Director,
 			Transport: transport,
 			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 				// client canceled

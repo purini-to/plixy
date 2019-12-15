@@ -14,11 +14,14 @@ const (
 	varsContextKey
 )
 
+const (
+	NameHeaderKey string = "X-Plixy-Api-Name"
+)
+
 var varsReg = regexp.MustCompile(`\{(.+?)\}`)
 
 type Definition struct {
-	Apis    []*Api `yaml:"apis" valid:"required"`
-	Version int64  `yaml:"-"`
+	Apis []*Api `yaml:"apis" valid:"required"`
 }
 
 func (d *Definition) Validate() (bool, error) {
@@ -26,8 +29,9 @@ func (d *Definition) Validate() (bool, error) {
 }
 
 type Api struct {
-	Name  string `yaml:"name" valid:"required"`
-	Proxy *Proxy `yaml:"proxy" valid:"required"`
+	Name    string    `yaml:"name" valid:"required"`
+	Proxy   *Proxy    `yaml:"proxy" valid:"required"`
+	Plugins []*Plugin `yaml:"plugins"`
 }
 
 type Proxy struct {
@@ -59,11 +63,19 @@ func (u *Upstream) UnmarshalYAML(unmarshal func(v interface{}) error) error {
 			for _, g := range group {
 				u.Vars = append(u.Vars, string(g[1]))
 			}
+		case "fixedPath":
+			v := v.(bool)
+			u.FixedPath = v
 		default:
 			continue
 		}
 	}
 	return nil
+}
+
+type Plugin struct {
+	Name   string                 `yaml:"name" valid:"required"`
+	Config map[string]interface{} `yaml:"config"`
 }
 
 type DefinitionChanged struct {

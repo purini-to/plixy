@@ -1,4 +1,4 @@
-package api
+package repository
 
 import (
 	"context"
@@ -7,6 +7,10 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/purini-to/plixy/pkg/plugin"
+
+	"github.com/purini-to/plixy/pkg/api"
 
 	"github.com/purini-to/plixy/pkg/config"
 
@@ -19,16 +23,21 @@ import (
 
 type FileSystemRepository struct {
 	sync.RWMutex
-	def    *Definition
-	path   string
-	ticker *time.Ticker
+	def     *api.Definition
+	path    string
+	ticker  *time.Ticker
+	version int64
 }
 
-func (f *FileSystemRepository) GetDefinition() (*Definition, error) {
+func (f *FileSystemRepository) GetDefinition() (*api.Definition, error) {
 	return f.def, nil
 }
 
-func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *DefinitionChanged) error {
+func (f *FileSystemRepository) GetVersion() int64 {
+	return f.version
+}
+
+func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *api.DefinitionChanged) error {
 	f.ticker = time.NewTicker(config.Global.WatchInterval)
 
 	log.Debug("Start watch api definition file", zap.String("file", f.path))
@@ -42,9 +51,7 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 					continue
 				}
 
-				f.Lock()
 				f.checkNewDefVersion(info, defChan)
-				f.Unlock()
 			case <-ctx.Done():
 				return
 			}
@@ -54,13 +61,17 @@ func (f *FileSystemRepository) Watch(ctx context.Context, defChan chan<- *Defini
 	return nil
 }
 
-func (f *FileSystemRepository) checkNewDefVersion(info os.FileInfo, defChan chan<- *DefinitionChanged) {
-	if f.def.Version >= info.ModTime().Unix() {
+func (f *FileSystemRepository) checkNewDefVersion(info os.FileInfo, defChan chan<- *api.DefinitionChanged) {
+	f.Lock()
+	defer f.Unlock()
+
+	if f.version >= info.ModTime().Unix() {
 		return
 	}
+	f.version = info.ModTime().Unix()
 	log.Info("Api definition file change detected")
 
-	err := f.emitChangeApiDef(defChan, info.ModTime().Unix())
+	err := f.emitChangeApiDef(defChan)
 	if err != nil {
 		log.Error("Error emit rename change api definition", zap.Error(err))
 		return
@@ -75,7 +86,7 @@ func (f *FileSystemRepository) Close() error {
 	return nil
 }
 
-func (f *FileSystemRepository) validate(def *Definition) error {
+func (f *FileSystemRepository) validate(def *api.Definition) error {
 	isValid, err := def.Validate()
 	if err != nil {
 		return err
@@ -83,11 +94,21 @@ func (f *FileSystemRepository) validate(def *Definition) error {
 	if !isValid {
 		return errors.New("invalid api definition")
 	}
+
+	plugins := make([]*api.Plugin, 0)
+	for _, a := range def.Apis {
+		for _, p := range a.Plugins {
+			plugins = append(plugins, p)
+		}
+	}
+	if err := plugin.ValidateConfig(plugins); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (f *FileSystemRepository) parseApiDef(bytes []byte) (*Definition, error) {
-	var definition Definition
+func (f *FileSystemRepository) parseApiDef(bytes []byte) (*api.Definition, error) {
+	var definition api.Definition
 	if err := yaml.Unmarshal(bytes, &definition); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal apis definition file")
 	}
@@ -109,7 +130,7 @@ func (f *FileSystemRepository) readApiDefFiles(path string) ([]byte, error) {
 	return bytes, nil
 }
 
-func (f *FileSystemRepository) emitChangeApiDef(defChan chan<- *DefinitionChanged, version int64) error {
+func (f *FileSystemRepository) emitChangeApiDef(defChan chan<- *api.DefinitionChanged) error {
 	bytes, err := f.readApiDefFiles(f.path)
 	if err != nil {
 		return errors.Wrap(err, "could not read the api definition file")
@@ -119,10 +140,9 @@ func (f *FileSystemRepository) emitChangeApiDef(defChan chan<- *DefinitionChange
 	if err != nil {
 		return errors.Wrap(err, "could not parse the api definition")
 	}
-	definition.Version = version
 	f.def = definition
 
-	defChan <- &DefinitionChanged{
+	defChan <- &api.DefinitionChanged{
 		Definition: definition,
 	}
 	return nil
@@ -149,7 +169,7 @@ func NewFileSystemRepository(filePath string) (*FileSystemRepository, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error parse api definition file")
 	}
-	definition.Version = info.ModTime().Unix()
+	f.version = info.ModTime().Unix()
 	f.def = definition
 
 	return f, nil

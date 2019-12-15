@@ -13,8 +13,11 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/creack/pty v1.1.9 // indirect
+	github.com/didip/tollbooth v4.0.2+incompatible // indirect
 	github.com/envoyproxy/go-control-plane v0.9.1 // indirect
+	github.com/go-redis/redis v6.15.6+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/pprof v0.0.0-20191105193234-27840fff0d09 // indirect
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/gorilla/mux v1.7.3
@@ -23,6 +26,7 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/magiconair/properties v1.8.1
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.2.1 // indirect
@@ -38,6 +42,7 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/tcnksm/go-httpstat v0.2.0
+	github.com/throttled/throttled v2.2.4+incompatible
 	github.com/uber/jaeger-client-go v2.20.1+incompatible // indirect
 	go.opencensus.io v0.22.2
 	go.uber.org/atomic v1.5.1 // indirect

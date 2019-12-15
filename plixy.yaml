@@ -6,7 +6,12 @@ apis:
         - "GET"
       upstream:
         target: "http://localhost:9001"
-      fixedPath: true
+        fixedPath: true
+    plugins:
+      - name: rate
+        config:
+          limit: 20
+          per: m
 
   - name: "status"
     proxy:
@@ -39,7 +44,7 @@ apis:
         - "GET"
       upstream:
         target: "http://localhost:9002/apis/v1/tasks/{id}"
-      fixedPath: true
+        fixedPath: true
 
   - name: "bad"
     proxy:
