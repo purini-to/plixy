@@ -91,7 +91,7 @@ apis:
 }
 
 func TestStore_Watch(t *testing.T) {
-	t.Run("should be return instance", func(t *testing.T) {
+	t.Run("should be watch changed file", func(t *testing.T) {
 		name, _ := ioutil.TempFile("", "filestore_test")
 		defer os.Remove(name.Name())
 
@@ -155,7 +155,7 @@ apis:
       upstream:
         target: "http://localhost:8080/update"
 `), 0644)
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 			cancel()
 		}()
 		<-ctx.Done()
