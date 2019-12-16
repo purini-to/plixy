@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/purini-to/plixy/pkg/store"
 
@@ -28,8 +27,6 @@ import (
 	// plugins
 	_ "github.com/purini-to/plixy/pkg/plugin/rate"
 )
-
-var defaultGraceTimeOut = time.Second * 30
 
 type Server struct {
 	sync.RWMutex
