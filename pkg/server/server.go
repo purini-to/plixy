@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/purini-to/plixy/pkg/api/director"
+
 	"github.com/purini-to/plixy/pkg/store"
 
 	"github.com/purini-to/plixy/pkg/api/router"
@@ -68,7 +70,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	s.router = rt
 
-	s.proxy, err = proxy.New()
+	s.proxy, err = proxy.New(proxy.WithDirector(director.Director))
 	if err != nil {
 		return errors.Wrap(err, "error proxy.New()")
 	}

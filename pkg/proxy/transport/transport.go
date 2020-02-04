@@ -46,14 +46,15 @@ func (t transportOpt) hash() string {
 func New(opts ...Option) *http.Transport {
 	// default
 	t := transportOpt{
-		dialTimeout:           30 * time.Second,
-		keepAlive:             30 * time.Second,
-		idleConnTimeout:       90 * time.Second,
-		tlsHandshakeTimeout:   10 * time.Second,
+		dialTimeout:           3 * time.Second,
+		keepAlive:             120 * time.Second,
+		idleConnTimeout:       120 * time.Second,
+		tlsHandshakeTimeout:   3 * time.Second,
 		expectContinueTimeout: 1 * time.Second,
-		maxIdleConns:          256,
+		responseHeaderTimeout: 5 * time.Second,
+		maxIdleConns:          512,
 		maxIdleConnsPerHost:   128,
-		insecureSkipVerify:    true,
+		insecureSkipVerify:    false,
 	}
 
 	for _, opt := range opts {
